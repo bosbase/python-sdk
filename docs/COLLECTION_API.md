@@ -87,3 +87,325 @@ pb.collections.import_collections(
 2. Use `truncate()` inside tests to reset state quickly.
 3. The API requires superuser credentials. Authenticate with `_superusers` before invoking collection management calls.
 4. When migrating production data, use `import_collections(..., delete_missing=False)` to avoid unintentional drops.
+
+## Complete Examples
+
+### Example 1: Setup Blog Collections
+
+```python
+from bosbase import BosBase
+
+pb = BosBase("http://127.0.0.1:8090")
+pb.collection("_superusers").auth_with_password("admin@example.com", "password")
+
+def setup_blog():
+    """Create blog collections with posts and categories."""
+    # Create posts collection
+    posts = pb.collections.create(
+        body={
+            "name": "posts",
+            "type": "base",
+            "fields": [
+                {
+                    "name": "title",
+                    "type": "text",
+                    "required": True,
+                    "min": 10,
+                    "max": 255
+                },
+                {
+                    "name": "slug",
+                    "type": "text",
+                    "required": True,
+                    "options": {
+                        "pattern": "^[a-z0-9-]+$"
+                    }
+                },
+                {
+                    "name": "content",
+                    "type": "editor",
+                    "required": True
+                },
+                {
+                    "name": "featured_image",
+                    "type": "file",
+                    "maxSelect": 1,
+                    "maxSize": 5242880,  # 5MB
+                    "mimeTypes": ["image/jpeg", "image/png"]
+                },
+                {
+                    "name": "published",
+                    "type": "bool",
+                    "required": False
+                },
+                {
+                    "name": "author",
+                    "type": "relation",
+                    "collectionId": "_pbc_users_auth_",
+                    "maxSelect": 1
+                },
+                {
+                    "name": "categories",
+                    "type": "relation",
+                    "collectionId": "categories",
+                    "maxSelect": 5
+                }
+            ],
+            "listRule": '@request.auth.id != "" || published = true',
+            "viewRule": '@request.auth.id != "" || published = true',
+            "createRule": '@request.auth.id != ""',
+            "updateRule": "author = @request.auth.id",
+            "deleteRule": "author = @request.auth.id"
+        }
+    )
+    
+    # Create categories collection
+    categories = pb.collections.create(
+        body={
+            "name": "categories",
+            "type": "base",
+            "fields": [
+                {
+                    "name": "name",
+                    "type": "text",
+                    "required": True,
+                    "unique": True
+                },
+                {
+                    "name": "slug",
+                    "type": "text",
+                    "required": True
+                },
+                {
+                    "name": "description",
+                    "type": "text",
+                    "required": False
+                }
+            ],
+            "listRule": '@request.auth.id != ""',
+            "viewRule": '@request.auth.id != ""'
+        }
+    )
+    
+    # Access collection IDs immediately after creation
+    print(f"Posts collection ID: {posts['id']}")
+    print(f"Categories collection ID: {categories['id']}")
+    
+    # Update posts collection to use the categories collection ID
+    posts_updated = pb.collections.get_one(posts["id"])
+    category_field = next((f for f in posts_updated["fields"] if f["name"] == "categories"), None)
+    if category_field:
+        category_field["collectionId"] = categories["id"]
+        pb.collections.update(posts["id"], body=posts_updated)
+    
+    print("Blog setup complete!")
+    return {
+        "posts_id": posts["id"],
+        "categories_id": categories["id"]
+    }
+
+# Usage
+result = setup_blog()
+```
+
+### Example 2: Migrate Collections
+
+```python
+from bosbase import BosBase
+import json
+
+pb = BosBase("http://127.0.0.1:8090")
+pb.collection("_superusers").auth_with_password("admin@example.com", "password")
+
+def migrate_collections():
+    """Migrate collections by adding new fields and updating rules."""
+    # Export existing collections
+    existing_collections = pb.collections.get_full_list()
+    
+    # Modify collections
+    modified_collections = []
+    for collection in existing_collections:
+        if collection["name"] == "posts":
+            # Add new field
+            collection["fields"].append({
+                "name": "views",
+                "type": "number",
+                "required": False,
+                "options": {
+                    "min": 0
+                }
+            })
+            
+            # Update rules
+            collection["updateRule"] = '@request.auth.id != "" || published = true'
+        
+        modified_collections.append(collection)
+    
+    # Import modified collections
+    pb.collections.import_collections(
+        collections=modified_collections,
+        delete_missing=False
+    )
+    
+    print("Collections migrated successfully")
+
+# Usage
+migrate_collections()
+```
+
+### Example 3: Clone Collection
+
+```python
+from bosbase import BosBase
+
+pb = BosBase("http://127.0.0.1:8090")
+pb.collection("_superusers").auth_with_password("admin@example.com", "password")
+
+def clone_collection(source_name: str, target_name: str):
+    """Clone a collection with a new name."""
+    # Get source collection
+    source = pb.collections.get_one(source_name)
+    
+    # Create new collection based on source
+    clone = dict(source)
+    clone.pop("id", None)  # Let it auto-generate
+    clone["name"] = target_name
+    clone.pop("created", None)
+    clone.pop("updated", None)
+    clone["system"] = False
+    
+    # Remove system fields
+    clone["fields"] = [f for f in clone.get("fields", []) if not f.get("system", False)]
+    
+    # Create cloned collection
+    return pb.collections.create(body=clone)
+
+# Usage
+cloned = clone_collection("posts", "posts_backup")
+print(f"Cloned collection ID: {cloned['id']}")
+```
+
+### Example 4: Backup and Restore
+
+```python
+from bosbase import BosBase
+import json
+
+pb = BosBase("http://127.0.0.1:8090")
+pb.collection("_superusers").auth_with_password("admin@example.com", "password")
+
+def backup_collections(filename: str = "collections_backup.json"):
+    """Backup all collections to a JSON file."""
+    # Get all collections
+    collections = pb.collections.get_full_list()
+    
+    # Save to file
+    with open(filename, "w") as f:
+        json.dump(collections, f, indent=2)
+    
+    print(f"Backed up {len(collections)} collections to {filename}")
+
+def restore_collections(filename: str = "collections_backup.json"):
+    """Restore collections from a JSON file."""
+    # Load from file
+    with open(filename, "r") as f:
+        collections = json.load(f)
+    
+    # Restore
+    pb.collections.import_collections(
+        collections=collections,
+        delete_missing=False
+    )
+    
+    print(f"Restored {len(collections)} collections from {filename}")
+
+# Usage
+backup_collections()
+# restore_collections()
+```
+
+### Example 5: Validate Collection Configuration
+
+```python
+from bosbase import BosBase
+
+pb = BosBase("http://127.0.0.1:8090")
+pb.collection("_superusers").auth_with_password("admin@example.com", "password")
+
+def validate_collection(name: str):
+    """Validate collection configuration."""
+    try:
+        collection = pb.collections.get_one(name)
+        
+        warnings = []
+        
+        # Check required fields
+        has_required_fields = any(f.get("required", False) for f in collection.get("fields", []))
+        if not has_required_fields:
+            warnings.append("Collection has no required fields")
+        
+        # Check API rules
+        if collection.get("type") == "base" and not collection.get("listRule"):
+            warnings.append("Base collection has no listRule (superuser only)")
+        
+        # Check indexes
+        if len(collection.get("indexes", [])) == 0:
+            warnings.append("Collection has no indexes")
+        
+        if warnings:
+            print(f"Validation warnings for {name}:")
+            for warning in warnings:
+                print(f"  - {warning}")
+        else:
+            print(f"Collection {name} is valid")
+        
+        return len(warnings) == 0
+        
+    except Exception as error:
+        print(f"Validation failed: {error}")
+        return False
+
+# Usage
+is_valid = validate_collection("posts")
+```
+
+## Error Handling
+
+```python
+from bosbase import BosBase
+from bosbase.exceptions import ClientResponseError
+
+pb = BosBase("http://127.0.0.1:8090")
+pb.collection("_superusers").auth_with_password("admin@example.com", "password")
+
+try:
+    pb.collections.create(
+        body={
+            "name": "test",
+            "type": "base",
+            "fields": []
+        }
+    )
+except ClientResponseError as error:
+    if error.status == 401:
+        print("Not authenticated")
+    elif error.status == 403:
+        print("Not a superuser")
+    elif error.status == 400:
+        print(f"Validation error: {error.response}")
+    else:
+        print(f"Unexpected error: {error}")
+except Exception as error:
+    print(f"Unexpected error: {error}")
+```
+
+## Best Practices
+
+1. **Always Authenticate**: Ensure you're authenticated as a superuser before making requests
+2. **Backup Before Import**: Always backup existing collections before using `import_collections` with `delete_missing=True`
+3. **Validate Schema**: Validate collection schemas before creating/updating
+4. **Use Scaffolds**: Use scaffolds as starting points for consistency
+5. **Test Rules**: Test API rules thoroughly before deploying to production
+6. **Index Important Fields**: Add indexes for frequently queried fields
+7. **Document Schemas**: Keep documentation of your collection schemas
+8. **Version Control**: Store collection schemas in version control for migration tracking
