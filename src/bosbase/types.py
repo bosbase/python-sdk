@@ -378,6 +378,85 @@ class LangChaingoRAGResponse:
         )
 
 
+@dataclass
+class LangChaingoDocumentQueryRequest:
+    collection: str
+    query: str
+    model: Optional[LangChaingoModelConfig] = None
+    top_k: Optional[int] = None
+    score_threshold: Optional[float] = None
+    filters: Optional[LangChaingoRAGFilters] = None
+    prompt_template: Optional[str] = None
+    return_sources: Optional[bool] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        payload: Dict[str, Any] = {
+            "collection": self.collection,
+            "query": self.query,
+        }
+        if self.model:
+            payload["model"] = self.model.to_dict()
+        if self.top_k is not None:
+            payload["topK"] = self.top_k
+        if self.score_threshold is not None:
+            payload["scoreThreshold"] = self.score_threshold
+        if self.filters is not None:
+            payload["filters"] = self.filters.to_dict()
+        if self.prompt_template is not None:
+            payload["promptTemplate"] = self.prompt_template
+        if self.return_sources is not None:
+            payload["returnSources"] = self.return_sources
+        return payload
+
+
+# DocumentQueryResponse is the same as RAGResponse
+LangChaingoDocumentQueryResponse = LangChaingoRAGResponse
+
+
+@dataclass
+class LangChaingoSQLRequest:
+    query: str
+    model: Optional[LangChaingoModelConfig] = None
+    tables: Optional[List[str]] = None
+    top_k: Optional[int] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        payload: Dict[str, Any] = {
+            "query": self.query,
+        }
+        if self.model:
+            payload["model"] = self.model.to_dict()
+        if self.tables is not None:
+            payload["tables"] = self.tables
+        if self.top_k is not None:
+            payload["topK"] = self.top_k
+        return payload
+
+
+@dataclass
+class LangChaingoSQLResponse:
+    sql: str
+    answer: str
+    columns: Optional[List[str]] = None
+    rows: Optional[List[List[str]]] = None
+    raw_result: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "LangChaingoSQLResponse":
+        rows_raw = data.get("rows")
+        return cls(
+            sql=data.get("sql", ""),
+            answer=data.get("answer", ""),
+            columns=data.get("columns"),
+            rows=(
+                [[str(cell) for cell in row] for row in rows_raw]
+                if rows_raw is not None
+                else None
+            ),
+            raw_result=data.get("rawResult"),
+        )
+
+
 # ---------------------------------------------------------------------------
 # LLM document helpers
 # ---------------------------------------------------------------------------
