@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Mapping, MutableMapping, Optional
+from typing import Any, Dict, Mapping, MutableMapping, Optional, Sequence
 
 from .base import BaseCrudService
 from ..utils import encode_path_segment
@@ -161,6 +161,104 @@ class CollectionService(BaseCrudService):
             query=query,
             headers=headers,
         )
+
+    def add_index(
+        self,
+        collection_id_or_name: str,
+        columns: Sequence[str],
+        *,
+        unique: bool = False,
+        index_name: Optional[str] = None,
+        query: Optional[Mapping[str, Any]] = None,
+        headers: Optional[MutableMapping[str, str]] = None,
+    ) -> Dict[str, Any]:
+        if not columns:
+            raise ValueError("At least one column must be specified.")
+
+        collection = self.get_one(collection_id_or_name, query=query, headers=headers)
+        fields = collection.get("fields") or []
+        field_names = [
+            (field.get("name") if isinstance(field, Mapping) else None)
+            for field in fields
+        ]
+        field_names = [name for name in field_names if name]
+
+        for column in columns:
+            if column != "id" and column not in field_names:
+                raise ValueError(f'Field "{column}" does not exist in the collection.')
+
+        collection_name = collection.get("name") or collection_id_or_name
+        idx_name = index_name or f"idx_{collection_name}_{'_'.join(columns)}"
+        columns_str = ", ".join(f"`{column}`" for column in columns)
+        index_sql = (
+            f"CREATE UNIQUE INDEX `{idx_name}` ON `{collection_name}` ({columns_str})"
+            if unique
+            else f"CREATE INDEX `{idx_name}` ON `{collection_name}` ({columns_str})"
+        )
+
+        indexes = list(collection.get("indexes") or [])
+        if index_sql in indexes:
+            raise ValueError("Index already exists.")
+
+        indexes.append(index_sql)
+        collection["indexes"] = indexes
+        return self.update(
+            collection_id_or_name,
+            body=collection,
+            query=query,
+            headers=headers,
+        )
+
+    def remove_index(
+        self,
+        collection_id_or_name: str,
+        columns: Sequence[str],
+        *,
+        query: Optional[Mapping[str, Any]] = None,
+        headers: Optional[MutableMapping[str, str]] = None,
+    ) -> Dict[str, Any]:
+        if not columns:
+            raise ValueError("At least one column must be specified.")
+
+        collection = self.get_one(collection_id_or_name, query=query, headers=headers)
+        indexes = list(collection.get("indexes") or [])
+        initial_length = len(indexes)
+
+        def matches(idx: str) -> bool:
+            for column in columns:
+                backticked = f"`{column}`"
+                if (
+                    backticked in idx
+                    or f"({column})" in idx
+                    or f"({column}," in idx
+                    or f", {column})" in idx
+                ):
+                    continue
+                return False
+            return True
+
+        indexes = [idx for idx in indexes if not matches(idx)]
+        if len(indexes) == initial_length:
+            raise ValueError("Index not found.")
+
+        collection["indexes"] = indexes
+        return self.update(
+            collection_id_or_name,
+            body=collection,
+            query=query,
+            headers=headers,
+        )
+
+    def get_indexes(
+        self,
+        collection_id_or_name: str,
+        *,
+        query: Optional[Mapping[str, Any]] = None,
+        headers: Optional[MutableMapping[str, str]] = None,
+    ) -> list[str]:
+        collection = self.get_one(collection_id_or_name, query=query, headers=headers)
+        existing = collection.get("indexes") or []
+        return [idx for idx in existing if isinstance(idx, str)]
 
     def get_schema(
         self,

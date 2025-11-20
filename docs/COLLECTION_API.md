@@ -54,6 +54,35 @@ pb.collections.update(
 
 Partial updates merge with the existing schema. For field-level helpers see `COLLECTIONS.md`.
 
+## Managing Indexes
+
+Indexes are stored as SQL strings on the collection definition. The Python SDK includes helpers so you can add, remove, or inspect indexes without editing raw SQL manually.
+
+```python
+# Unique slug index with a custom name
+pb.collections.add_index(
+    "posts",
+    columns=["slug"],
+    unique=True,
+    index_name="idx_posts_slug_unique",
+)
+
+# Composite non-unique index (name auto-generated)
+pb.collections.add_index("posts", columns=["status", "published"])
+
+# Remove any index that references the slug column
+pb.collections.remove_index("posts", columns=["slug"])
+
+# Inspect current indexes
+for idx in pb.collections.get_indexes("posts"):
+    print(idx)
+```
+
+- `columns` must reference existing fields (system fields like `id` are always allowed).
+- `unique=True` emits `CREATE UNIQUE INDEX` while the default emits `CREATE INDEX`.
+- Omit `index_name` to let the SDK generate `idx_{collection}_{column1}_{column2}`.
+- `remove_index()` deletes indexes that contain all provided columns, so it works for both single and multi-column indexes.
+
 ## Delete & Truncate
 
 ```python
