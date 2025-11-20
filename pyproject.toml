@@ -28,3 +28,6 @@ classifiers = [
 [project.urls]
 Documentation = "https://docs.bosbase.com"
 Source = "https://github.com/bosbase"
+
+[tool.hatchling.build]
+packages = ["src/bosbase"]
