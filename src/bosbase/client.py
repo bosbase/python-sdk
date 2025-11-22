@@ -23,6 +23,7 @@ from .services.health import HealthService
 from .services.langchaingo import LangChaingoService
 from .services.llm_document import LLMDocumentService
 from .services.log import LogService
+from .services.graphql import GraphQLService
 from .services.record import RecordService
 from .services.realtime import RealtimeService
 from .services.settings import SettingsService
@@ -63,6 +64,7 @@ class BosBase:
         self.langchaingo = LangChaingoService(self)
         self.llm_documents = LLMDocumentService(self)
         self.caches = CacheService(self)
+        self.graphql = GraphQLService(self)
 
         self._record_services: Dict[str, RecordService] = {}
         self._lock = threading.RLock()

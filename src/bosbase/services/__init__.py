@@ -10,6 +10,7 @@ from .health import HealthService
 from .langchaingo import LangChaingoService
 from .llm_document import LLMDocumentService
 from .log import LogService
+from .graphql import GraphQLService
 from .record import RecordService
 from .realtime import RealtimeService
 from .settings import SettingsService
@@ -26,6 +27,7 @@ __all__ = [
     "LangChaingoService",
     "LLMDocumentService",
     "LogService",
+    "GraphQLService",
     "RecordService",
     "RealtimeService",
     "SettingsService",
