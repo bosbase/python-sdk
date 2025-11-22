@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "bosbase"
-version = "0.1.1"
+version = "0.1.2"
 description = "Official Python SDK for interacting with the BosBase API."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -14,6 +14,7 @@ authors = [
 ]
 dependencies = [
     "requests>=2.31.0",
+    "websocket-client>=1.8.0",
 ]
 classifiers = [
     "Programming Language :: Python :: 3",

@@ -24,6 +24,7 @@ from .services.langchaingo import LangChaingoService
 from .services.llm_document import LLMDocumentService
 from .services.log import LogService
 from .services.graphql import GraphQLService
+from .services.pubsub import PubSubService
 from .services.record import RecordService
 from .services.realtime import RealtimeService
 from .services.settings import SettingsService
@@ -65,6 +66,7 @@ class BosBase:
         self.llm_documents = LLMDocumentService(self)
         self.caches = CacheService(self)
         self.graphql = GraphQLService(self)
+        self.pubsub = PubSubService(self)
 
         self._record_services: Dict[str, RecordService] = {}
         self._lock = threading.RLock()
@@ -81,6 +83,7 @@ class BosBase:
 
     def close(self) -> None:
         self.realtime.disconnect()
+        self.pubsub.disconnect()
 
     def collection(self, collection_id_or_name: str) -> RecordService:
         with self._lock:
