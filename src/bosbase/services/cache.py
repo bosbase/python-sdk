@@ -127,7 +127,7 @@ class CacheService(BaseService):
         if ttl_seconds is not None:
             payload["ttlSeconds"] = ttl_seconds
         return self.client.send(
-            f"/api/cache/{cache}/entries/{key}",
+            f"/api/cache/{encode_path_segment(cache)}/entries/{encode_path_segment(key)}",
             method="PATCH",
             body=payload,
             query=query,

@@ -90,6 +90,27 @@ pb.collections.delete_collection("unused")
 pb.collections.truncate("logs")  # delete records, keep schema
 ```
 
+## Register Existing SQL Tables
+
+Map existing SQL tables to BosBase collections (superuser-only):
+
+```python
+pb.collections.register_sql_tables(["projects", "accounts"])
+
+pb.collections.import_sql_tables(
+    [
+        {"name": "reports"},
+        {
+            "name": "legacy_orders",
+            "sql": "CREATE TABLE IF NOT EXISTS legacy_orders (id TEXT PRIMARY KEY);",
+        },
+    ]
+)
+```
+
+`register_sql_tables()` registers existing tables.  
+`import_sql_tables()` optionally runs SQL before registering and returns `{"created": [...], "skipped": [...]}`.
+
 ## Import / Export
 
 ```python
@@ -103,6 +124,8 @@ pb.collections.import_collections(
 
 - `delete_missing=True` removes collections not present in the import payload.
 - Use this inside migrations to sync environments.
+- `export_collections()` strips timestamps and OAuth providers to match the admin UI export.
+- `normalize_for_import()` deduplicates collections/fields and removes timestamps before calling `import_collections()`.
 
 ## Settings and Metadata
 

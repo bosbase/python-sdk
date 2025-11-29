@@ -28,6 +28,7 @@ from .services.pubsub import PubSubService
 from .services.record import RecordService
 from .services.realtime import RealtimeService
 from .services.settings import SettingsService
+from .services.sql import SQLService
 from .services.vector import VectorService
 
 USER_AGENT = "bosbase-python-sdk/0.1.0"
@@ -66,6 +67,7 @@ class BosBase:
         self.llm_documents = LLMDocumentService(self)
         self.caches = CacheService(self)
         self.graphql = GraphQLService(self)
+        self.sql = SQLService(self)
         self.pubsub = PubSubService(self)
 
         self._record_services: Dict[str, RecordService] = {}

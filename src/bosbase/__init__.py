@@ -21,6 +21,7 @@ from .types import (
     LLMDocumentUpdate,
     LLMQueryOptions,
     LLMQueryResult,
+    SQLExecuteResponse,
     VectorBatchInsertOptions,
     VectorBatchInsertResponse,
     VectorCollectionConfig,
@@ -65,4 +66,6 @@ __all__ = [
     "LLMDocumentUpdate",
     "LLMQueryOptions",
     "LLMQueryResult",
+    # SQL helpers
+    "SQLExecuteResponse",
 ]

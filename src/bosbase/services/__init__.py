@@ -11,9 +11,11 @@ from .langchaingo import LangChaingoService
 from .llm_document import LLMDocumentService
 from .log import LogService
 from .graphql import GraphQLService
+from .pubsub import PubSubService
 from .record import RecordService
 from .realtime import RealtimeService
 from .settings import SettingsService
+from .sql import SQLService
 from .vector import VectorService
 
 __all__ = [
@@ -28,8 +30,10 @@ __all__ = [
     "LLMDocumentService",
     "LogService",
     "GraphQLService",
+    "PubSubService",
     "RecordService",
     "RealtimeService",
     "SettingsService",
+    "SQLService",
     "VectorService",
 ]

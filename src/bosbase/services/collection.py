@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Mapping, MutableMapping, Optional, Sequence
+from typing import Any, Callable, Dict, Mapping, MutableMapping, Optional, Sequence
 
 from .base import BaseCrudService
 from ..utils import encode_path_segment
@@ -45,6 +45,53 @@ class CollectionService(BaseCrudService):
             headers=headers,
         )
 
+    def register_sql_tables(
+        self,
+        tables: Sequence[str],
+        *,
+        body: Optional[Mapping[str, Any]] = None,
+        query: Optional[Mapping[str, Any]] = None,
+        headers: Optional[MutableMapping[str, str]] = None,
+    ) -> list[Dict[str, Any]]:
+        if not tables:
+            raise ValueError("tables must contain at least one table name")
+
+        payload = {"tables": list(tables)}
+        if body:
+            payload.update(body)
+
+        data = self.client.send(
+            f"{self.base_crud_path}/sql/tables",
+            method="POST",
+            body=payload,
+            query=query,
+            headers=headers,
+        )
+        return list(data or [])
+
+    def import_sql_tables(
+        self,
+        tables: Sequence[Mapping[str, Any]],
+        *,
+        body: Optional[Mapping[str, Any]] = None,
+        query: Optional[Mapping[str, Any]] = None,
+        headers: Optional[MutableMapping[str, str]] = None,
+    ) -> Dict[str, Any]:
+        if not tables:
+            raise ValueError("tables must contain at least one table definition")
+
+        payload = {"tables": list(tables)}
+        if body:
+            payload.update(body)
+
+        return self.client.send(
+            f"{self.base_crud_path}/sql/import",
+            method="POST",
+            body=payload,
+            query=query,
+            headers=headers,
+        )
+
     def import_collections(
         self,
         collections: Any,
@@ -65,6 +112,72 @@ class CollectionService(BaseCrudService):
             query=query,
             headers=headers,
         )
+
+    def export_collections(
+        self,
+        filter_collections: Optional[Callable[[Dict[str, Any]], bool]] = None,
+        *,
+        query: Optional[Mapping[str, Any]] = None,
+        headers: Optional[MutableMapping[str, str]] = None,
+    ) -> list[Dict[str, Any]]:
+        collections = self.get_full_list(query=query, headers=headers)
+        if filter_collections:
+            collections = [
+                item for item in collections if filter_collections(item)
+            ]
+
+        cleaned: list[Dict[str, Any]] = []
+        for collection in collections:
+            item = dict(collection or {})
+            item.pop("created", None)
+            item.pop("updated", None)
+
+            oauth2 = item.get("oauth2")
+            if isinstance(oauth2, Mapping) and "providers" in oauth2:
+                oauth2_copy = dict(oauth2)
+                oauth2_copy.pop("providers", None)
+                item["oauth2"] = oauth2_copy
+
+            cleaned.append(item)
+        return cleaned
+
+    def normalize_for_import(
+        self,
+        collections: Sequence[Mapping[str, Any]],
+    ) -> list[Dict[str, Any]]:
+        seen_ids = set()
+        unique_collections: list[Mapping[str, Any]] = []
+        for collection in collections:
+            cid = collection.get("id") if isinstance(collection, Mapping) else None
+            if cid and cid in seen_ids:
+                continue
+            if cid:
+                seen_ids.add(cid)
+            unique_collections.append(collection)
+
+        normalized: list[Dict[str, Any]] = []
+        for collection in unique_collections:
+            item = dict(collection or {})
+            item.pop("created", None)
+            item.pop("updated", None)
+
+            fields = item.get("fields")
+            if isinstance(fields, list):
+                seen_field_ids = set()
+                deduped_fields = []
+                for field in fields:
+                    if isinstance(field, Mapping):
+                        field_id = field.get("id")
+                        if field_id and field_id in seen_field_ids:
+                            continue
+                        if field_id:
+                            seen_field_ids.add(field_id)
+                    deduped_fields.append(field)
+                item["fields"] = deduped_fields
+
+            normalized.append(item)
+
+        return normalized
 
     def get_scaffolds(
         self,

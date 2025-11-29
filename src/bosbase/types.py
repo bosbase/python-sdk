@@ -548,3 +548,32 @@ class LLMQueryResult:
             metadata={str(k): str(v) for k, v in metadata.items()},
             similarity=float(data.get("similarity", 0)),
         )
+
+
+# ---------------------------------------------------------------------------
+# SQL helpers
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class SQLExecuteResponse:
+    columns: Optional[List[str]] = None
+    rows: Optional[List[List[str]]] = None
+    rows_affected: Optional[int] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "SQLExecuteResponse":
+        rows_raw = data.get("rows")
+        return cls(
+            columns=[str(col) for col in data.get("columns", []) or []]
+            if data.get("columns") is not None
+            else None,
+            rows=(
+                [[str(cell) for cell in row] for row in rows_raw]
+                if rows_raw is not None
+                else None
+            ),
+            rows_affected=(
+                int(data["rowsAffected"]) if data.get("rowsAffected") is not None else None
+            ),
+        )

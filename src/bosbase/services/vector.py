@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Mapping, MutableMapping, Optional
+from typing import Any, Dict, Mapping, MutableMapping, Optional, Union
 
 from .. import types as sdk_types
 from ..utils import encode_path_segment
@@ -17,9 +17,27 @@ class VectorService(BaseService):
             return f"{self.base_path}/{encode_path_segment(collection)}"
         return self.base_path
 
+    def _normalize_document(
+        self, document: Union[sdk_types.VectorDocument, Mapping[str, Any]]
+    ) -> Dict[str, Any]:
+        if isinstance(document, sdk_types.VectorDocument):
+            return document.to_dict()
+        if isinstance(document, Mapping):
+            return dict(document)
+        raise TypeError("document must be a VectorDocument or mapping")
+
+    def _normalize_batch_options(
+        self, options: Union[sdk_types.VectorBatchInsertOptions, Mapping[str, Any]]
+    ) -> Dict[str, Any]:
+        if isinstance(options, sdk_types.VectorBatchInsertOptions):
+            return options.to_dict()
+        if isinstance(options, Mapping):
+            return dict(options)
+        raise TypeError("options must be VectorBatchInsertOptions or mapping")
+
     def insert(
         self,
-        document: sdk_types.VectorDocument,
+        document: Union[sdk_types.VectorDocument, Mapping[str, Any]],
         *,
         collection: Optional[str] = None,
         query: Optional[Mapping[str, Any]] = None,
@@ -28,7 +46,7 @@ class VectorService(BaseService):
         data = self.client.send(
             self._collection_path(collection),
             method="POST",
-            body=document.to_dict(),
+            body=self._normalize_document(document),
             query=query,
             headers=headers,
         )
@@ -36,7 +54,7 @@ class VectorService(BaseService):
 
     def batch_insert(
         self,
-        options: sdk_types.VectorBatchInsertOptions,
+        options: Union[sdk_types.VectorBatchInsertOptions, Mapping[str, Any]],
         *,
         collection: Optional[str] = None,
         query: Optional[Mapping[str, Any]] = None,
@@ -45,7 +63,7 @@ class VectorService(BaseService):
         data = self.client.send(
             f"{self._collection_path(collection)}/documents/batch",
             method="POST",
-            body=options.to_dict(),
+            body=self._normalize_batch_options(options),
             query=query,
             headers=headers,
         )
@@ -54,7 +72,7 @@ class VectorService(BaseService):
     def update(
         self,
         document_id: str,
-        document: sdk_types.VectorDocument,
+        document: Union[sdk_types.VectorDocument, Mapping[str, Any]],
         *,
         collection: Optional[str] = None,
         query: Optional[Mapping[str, Any]] = None,
@@ -63,7 +81,7 @@ class VectorService(BaseService):
         data = self.client.send(
             f"{self._collection_path(collection)}/{encode_path_segment(document_id)}",
             method="PATCH",
-            body=document.to_dict(),
+            body=self._normalize_document(document),
             query=query,
             headers=headers,
         )

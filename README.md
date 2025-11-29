@@ -46,6 +46,7 @@ unsubscribe()
 - `pb.collections` – Manage collections, scaffolds, schema queries.
 - `pb.files` – Token generation and URL building for protected files.
 - `pb.logs`, `pb.crons`, `pb.backups`, `pb.vectors`, `pb.llm_documents`, `pb.langchaingo`, `pb.caches` – Service wrappers that mirror the JavaScript SDK.
+- `pb.sql` – Superuser SQL execution with column/row responses; `pb.collections.register_sql_tables()` and `pb.collections.import_sql_tables()` expose existing SQL tables as BosBase collections.
 - `pb.realtime` – SSE based realtime subscriptions with automatic reconnection.
 - `pb.create_batch()` – Transactional batch writes across collections.
 
@@ -61,6 +62,7 @@ The `docs/` directory mirrors the JavaScript SDK guides, adapted for Python. Hig
 - `REALTIME.md`: realtime subscriptions, connection lifecycle.
 - `FILES.md`, `FILE_API.md`: uploads, tokens, download URLs.
 - `LANGCHAINGO_API.md`, `LLM_DOCUMENTS.md`, `VECTOR_API.md`: AI and RAG workflows.
+- `SQL_EXECUTION_API.md`, `SQL_TABLE_REGISTRATION.md`: superuser SQL workflows and mapping existing tables to collections.
 
 Every topic from the JS SDK now has a Python-specific counterpart with code samples.
 
