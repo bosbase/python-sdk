@@ -20,6 +20,7 @@ from .services.collection import CollectionService
 from .services.cron import CronService
 from .services.file import FileService
 from .services.health import HealthService
+from .services.plugin import PluginService
 from .services.langchaingo import LangChaingoService
 from .services.llm_document import LLMDocumentService
 from .services.log import LogService
@@ -27,7 +28,10 @@ from .services.graphql import GraphQLService
 from .services.pubsub import PubSubService
 from .services.record import RecordService
 from .services.realtime import RealtimeService
+from .services.redis import RedisService
 from .services.settings import SettingsService
+from .services.script import ScriptService
+from .services.script_permissions import ScriptPermissionsService
 from .services.sql import SQLService
 from .services.vector import VectorService
 
@@ -66,7 +70,11 @@ class BosBase:
         self.langchaingo = LangChaingoService(self)
         self.llm_documents = LLMDocumentService(self)
         self.caches = CacheService(self)
+        self.plugins = PluginService(self)
         self.graphql = GraphQLService(self)
+        self.redis = RedisService(self)
+        self.scripts = ScriptService(self)
+        self.scripts_permissions = ScriptPermissionsService(self)
         self.sql = SQLService(self)
         self.pubsub = PubSubService(self)
 

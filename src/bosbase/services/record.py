@@ -6,12 +6,14 @@ import base64
 import json
 import threading
 import time
-from typing import Any, Callable, Dict, Mapping, MutableMapping, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, Mapping, MutableMapping, Optional
 
-from ..client import BosBase
 from ..exceptions import ClientResponseError
 from ..utils import encode_path_segment
 from .base import BaseCrudService
+
+if TYPE_CHECKING:  # pragma: no cover
+    from ..client import BosBase
 
 
 SubscriptionCallback = Callable[[Dict[str, Any]], None]

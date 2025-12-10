@@ -7,7 +7,10 @@ import threading
 import time
 from typing import Any, Callable, Dict, List, Optional
 
-import websocket
+try:  # pragma: no cover - optional dependency for runtime pubsub
+    import websocket  # type: ignore
+except Exception:  # pragma: no cover
+    websocket = None  # type: ignore
 
 from ..exceptions import ClientResponseError
 from .base import BaseService
@@ -142,6 +145,8 @@ class PubSubService(BaseService):
     # ------------------------------------------------------------------
 
     def ensure_socket(self) -> None:
+        if websocket is None:
+            raise ImportError("websocket-client is required for pubsub")
         with self._lock:
             if self._is_ready:
                 return

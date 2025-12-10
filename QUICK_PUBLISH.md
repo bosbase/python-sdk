@@ -50,6 +50,15 @@ hatch publish --repo testpypi
 For detailed instructions, see [PUBLISHING.md](./PUBLISHING.md).
 
 
+Run test
+cd python-sdk
+python -m venv .venv
+source .venv/bin/activate   # or .venv\Scripts\activate on Windows
+pip install -e . pytest
+pytest
+
+/bin/bash -lc 'cd python-sdk && PYTHONPATH=src python3 -m pytest'
+
 
 
 
