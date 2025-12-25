@@ -120,7 +120,7 @@ class PluginService(BaseService):
 
     def _build_url(self, path: str, query: Optional[Mapping[str, Any]]) -> str:
         enriched = dict(query or {})
-        if self.client.auth_store.is_valid():
+        if self.client.auth_store.token:
             enriched.setdefault("token", self.client.auth_store.token)
         return self.client.build_url(path, enriched)
 
@@ -141,10 +141,7 @@ class PluginService(BaseService):
         if headers:
             req_headers.update(headers)
 
-        if (
-            "Authorization" not in req_headers
-            and self.client.auth_store.is_valid()
-        ):
+        if "Authorization" not in req_headers and self.client.auth_store.token:
             req_headers["Authorization"] = self.client.auth_store.token
 
         response = requests.get(

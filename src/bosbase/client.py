@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import threading
+import warnings
 from typing import Any, Callable, Dict, List, Mapping, MutableMapping, Optional
 from urllib.parse import urlencode, urljoin, urlparse
 
@@ -80,6 +81,9 @@ class BosBase:
 
         self._record_services: Dict[str, RecordService] = {}
         self._lock = threading.RLock()
+        self._cancel_lock = threading.RLock()
+        self._cancel_tokens: Dict[str, threading.Event] = {}
+        self._enable_auto_cancellation = True
 
     def __del__(self) -> None:  # pragma: no cover - best effort clean up
         try:
@@ -94,6 +98,15 @@ class BosBase:
     def close(self) -> None:
         self.realtime.disconnect()
         self.pubsub.disconnect()
+
+    @property
+    def admins(self) -> RecordService:
+        warnings.warn(
+            "BosBase.admins is deprecated; use collection('_superusers') instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.collection("_superusers")
 
     def collection(self, collection_id_or_name: str) -> RecordService:
         with self._lock:
@@ -151,6 +164,27 @@ class BosBase:
     def create_batch(self) -> BatchService:
         return BatchService(self)
 
+    def auto_cancellation(self, enable: bool) -> "BosBase":
+        self._enable_auto_cancellation = bool(enable)
+        return self
+
+    def cancel_request(self, request_key: str) -> "BosBase":
+        if not request_key:
+            return self
+        with self._cancel_lock:
+            token = self._cancel_tokens.pop(request_key, None)
+        if token:
+            token.set()
+        return self
+
+    def cancel_all_requests(self) -> "BosBase":
+        with self._cancel_lock:
+            tokens = list(self._cancel_tokens.values())
+            self._cancel_tokens.clear()
+        for token in tokens:
+            token.set()
+        return self
+
     def get_file_url(
         self,
         record: Mapping[str, Any],
@@ -184,7 +218,23 @@ class BosBase:
         body: Optional[Any] = None,
         files: Optional[Any] = None,
         timeout: Optional[float] = None,
+        request_key: Optional[str] = None,
+        auto_cancel: Optional[bool] = None,
     ) -> Any:
+        cancel_event: Optional[threading.Event] = None
+        cancel_key: Optional[str] = None
+        if auto_cancel is None:
+            auto_cancel = self._enable_auto_cancellation
+        if auto_cancel or request_key is not None:
+            cancel_key = request_key or f"{method.upper()}{path}"
+            if cancel_key:
+                cancel_event = threading.Event()
+                with self._cancel_lock:
+                    previous = self._cancel_tokens.get(cancel_key)
+                    if previous and auto_cancel:
+                        previous.set()
+                    self._cancel_tokens[cancel_key] = cancel_event
+
         current_query = dict(query or {})
         url = self.build_url(path, current_query)
 
@@ -194,7 +244,7 @@ class BosBase:
         }
         if headers:
             req_headers.update(headers)
-        if "Authorization" not in req_headers and self.auth_store.is_valid():
+        if "Authorization" not in req_headers and self.auth_store.token:
             req_headers["Authorization"] = self.auth_store.token
 
         payload = to_serializable(body) if body is not None else None
@@ -271,29 +321,59 @@ class BosBase:
                 request_kwargs.pop("json")
 
         try:
-            response = requests.request(**request_kwargs)
-        except requests.RequestException as exc:  # pragma: no cover - network errors
-            raise ClientResponseError(url=url, original_error=exc) from exc
+            try:
+                response = requests.request(**request_kwargs)
+            except requests.RequestException as exc:  # pragma: no cover - network errors
+                if cancel_event and cancel_event.is_set():
+                    raise ClientResponseError(
+                        url=url,
+                        status=0,
+                        response={"message": "Request aborted"},
+                        is_abort=True,
+                        original_error=exc,
+                    ) from exc
+                raise ClientResponseError(url=url, original_error=exc) from exc
 
-        data: Any = None
-        if response.status_code != 204:
-            content_type = response.headers.get("Content-Type", "")
-            if "application/json" in content_type.lower():
-                try:
-                    data = response.json()
-                except ValueError:
-                    data = {}
-            else:
-                data = response.content
+            data: Any = None
+            if response.status_code != 204:
+                content_type = response.headers.get("Content-Type", "")
+                if "application/json" in content_type.lower():
+                    try:
+                        data = response.json()
+                    except ValueError:
+                        data = {}
+                else:
+                    data = response.content
 
-        if response.status_code >= 400:
-            raise ClientResponseError(
-                url=url,
-                status=response.status_code,
-                response=data if isinstance(data, dict) else {},
-            )
+            if cancel_event and cancel_event.is_set():
+                raise ClientResponseError(
+                    url=url,
+                    status=0,
+                    response={"message": "Request aborted"},
+                    is_abort=True,
+                )
 
-        if self.after_send:
-            data = self.after_send(response, data)
+            if response.status_code >= 400:
+                raise ClientResponseError(
+                    url=url,
+                    status=response.status_code,
+                    response=data if isinstance(data, dict) else {},
+                )
 
-        return data
+            if self.after_send:
+                data = self.after_send(response, data)
+
+            if cancel_event and cancel_event.is_set():
+                raise ClientResponseError(
+                    url=url,
+                    status=0,
+                    response={"message": "Request aborted"},
+                    is_abort=True,
+                )
+
+            return data
+        finally:
+            if cancel_key and cancel_event:
+                with self._cancel_lock:
+                    if self._cancel_tokens.get(cancel_key) is cancel_event:
+                        self._cancel_tokens.pop(cancel_key, None)

@@ -5,10 +5,10 @@ from __future__ import annotations
 import base64
 import json
 import threading
-import time
 from typing import TYPE_CHECKING, Any, Callable, Dict, Mapping, MutableMapping, Optional
 
 from ..exceptions import ClientResponseError
+from ..refresh import register_auto_refresh, reset_auto_refresh
 from ..utils import encode_path_segment
 from .base import BaseCrudService
 
@@ -17,6 +17,12 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 SubscriptionCallback = Callable[[Dict[str, Any]], None]
+
+
+def _with_auto_refresh(query: Optional[Mapping[str, Any]]) -> Dict[str, Any]:
+    params = dict(query or {})
+    params["autoRefresh"] = True
+    return params
 
 
 class RecordService(BaseCrudService):
@@ -35,6 +41,10 @@ class RecordService(BaseCrudService):
     @property
     def base_crud_path(self) -> str:
         return f"{self.base_collection_path}/records"
+
+    @property
+    def is_superusers(self) -> bool:
+        return self.collection_id_or_name in ("_superusers", "_pbc_2773867675")
 
     # ------------------------------------------------------------------
     # Realtime
@@ -126,10 +136,18 @@ class RecordService(BaseCrudService):
         *,
         expand: Optional[str] = None,
         fields: Optional[str] = None,
+        auto_refresh_threshold: Optional[int] = None,
+        auto_refresh: bool = True,
         body: Optional[Mapping[str, Any]] = None,
         query: Optional[Mapping[str, Any]] = None,
         headers: Optional[MutableMapping[str, str]] = None,
     ) -> Dict[str, Any]:
+        threshold = None
+        if self.is_superusers:
+            threshold = auto_refresh_threshold
+            if not auto_refresh:
+                reset_auto_refresh(self.client)
+
         payload = dict(body or {})
         payload["identity"] = identity
         payload["password"] = password
@@ -147,7 +165,126 @@ class RecordService(BaseCrudService):
             query=params,
             headers=headers,
         )
-        return self._auth_response(data)
+        data = self._auth_response(data)
+
+        if threshold and self.is_superusers and auto_refresh:
+            register_auto_refresh(
+                self.client,
+                int(threshold),
+                lambda: self.auth_refresh(query=_with_auto_refresh(query)),
+                lambda: self.auth_with_password(
+                    identity,
+                    password,
+                    expand=expand,
+                    fields=fields,
+                    body=body,
+                    query=_with_auto_refresh(query),
+                    headers=headers,
+                    auto_refresh=True,
+                ),
+            )
+
+        return data
+
+    def bind_custom_token(
+        self,
+        email: str,
+        password: str,
+        token: str,
+        *,
+        body: Optional[Mapping[str, Any]] = None,
+        query: Optional[Mapping[str, Any]] = None,
+        headers: Optional[MutableMapping[str, str]] = None,
+    ) -> bool:
+        payload = dict(body or {})
+        payload["email"] = email
+        payload["password"] = password
+        payload["token"] = token
+        self.client.send(
+            f"{self.base_collection_path}/bind-token",
+            method="POST",
+            body=payload,
+            query=query,
+            headers=headers,
+        )
+        return True
+
+    def unbind_custom_token(
+        self,
+        email: str,
+        password: str,
+        token: str,
+        *,
+        body: Optional[Mapping[str, Any]] = None,
+        query: Optional[Mapping[str, Any]] = None,
+        headers: Optional[MutableMapping[str, str]] = None,
+    ) -> bool:
+        payload = dict(body or {})
+        payload["email"] = email
+        payload["password"] = password
+        payload["token"] = token
+        self.client.send(
+            f"{self.base_collection_path}/unbind-token",
+            method="POST",
+            body=payload,
+            query=query,
+            headers=headers,
+        )
+        return True
+
+    def auth_with_token(
+        self,
+        token: str,
+        *,
+        expand: Optional[str] = None,
+        fields: Optional[str] = None,
+        auto_refresh_threshold: Optional[int] = None,
+        auto_refresh: bool = True,
+        body: Optional[Mapping[str, Any]] = None,
+        query: Optional[Mapping[str, Any]] = None,
+        headers: Optional[MutableMapping[str, str]] = None,
+    ) -> Dict[str, Any]:
+        threshold = None
+        if self.is_superusers:
+            threshold = auto_refresh_threshold
+            if not auto_refresh:
+                reset_auto_refresh(self.client)
+
+        payload = dict(body or {})
+        payload["token"] = token
+
+        params = dict(query or {})
+        if expand is not None:
+            params.setdefault("expand", expand)
+        if fields is not None:
+            params.setdefault("fields", fields)
+
+        data = self.client.send(
+            f"{self.base_collection_path}/auth-with-token",
+            method="POST",
+            body=payload,
+            query=params,
+            headers=headers,
+        )
+        data = self._auth_response(data)
+
+        if threshold and self.is_superusers and auto_refresh:
+            register_auto_refresh(
+                self.client,
+                int(threshold),
+                lambda: self.auth_refresh(query=_with_auto_refresh(query)),
+                lambda: self.auth_with_token(
+                    token,
+                    expand=expand,
+                    fields=fields,
+                    body=body,
+                    query=_with_auto_refresh(query),
+                    headers=headers,
+                    auto_refresh=True,
+                ),
+            )
+
+        return data
 
     def auth_with_oauth2_code(
         self,

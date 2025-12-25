@@ -184,7 +184,7 @@ class PubSubService(BaseService):
 
     def _build_ws_url(self) -> str:
         query: Dict[str, Any] = {}
-        if self.client.auth_store.is_valid():
+        if self.client.auth_store.token:
             query["token"] = self.client.auth_store.token
         base = self.client.build_url("/api/pubsub", query)
         if base.startswith("https"):

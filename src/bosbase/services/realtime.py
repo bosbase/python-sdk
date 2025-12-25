@@ -159,7 +159,7 @@ class RealtimeService(BaseService):
                 "Accept-Language": self.client.lang,
                 "User-Agent": "bosbase-python-sdk",
             }
-            if self.client.auth_store.is_valid():
+            if self.client.auth_store.token:
                 headers["Authorization"] = self.client.auth_store.token
 
             try:

@@ -1,6 +1,6 @@
 """BosBase Python SDK public API."""
 
-from .auth import AuthStore
+from .auth import AuthStore, AsyncAuthStore, BaseAuthStore, LocalAuthStore
 from .client import BosBase
 from .exceptions import ClientResponseError
 from .types import (
@@ -35,6 +35,9 @@ from .types import (
 
 __all__ = [
     "AuthStore",
+    "BaseAuthStore",
+    "LocalAuthStore",
+    "AsyncAuthStore",
     "BosBase",
     "ClientResponseError",
     # vector helpers
