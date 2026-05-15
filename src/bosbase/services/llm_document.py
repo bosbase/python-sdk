@@ -156,3 +156,14 @@ class LLMDocumentService(BaseService):
             query=query,
             headers=headers,
         )
+
+    def get_one(
+        self,
+        collection: str,
+        document_id: str,
+        *,
+        query: Optional[Mapping[str, Any]] = None,
+        headers: Optional[MutableMapping[str, str]] = None,
+    ) -> sdk_types.LLMDocument:
+        """Alias for get()."""
+        return self.get(collection, document_id, query=query, headers=headers)

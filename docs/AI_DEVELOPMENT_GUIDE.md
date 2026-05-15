@@ -1,6 +1,6 @@
-# AI Development Guide - JavaScript SDK
+# AI Development Guide - Python SDK
 
-This guide provides a comprehensive, fast reference for AI systems to quickly develop applications using the BosBase JavaScript SDK. All examples are production-ready and follow best practices.
+This guide provides a comprehensive, fast reference for AI systems to quickly develop applications using the BosBase Python SDK. All examples are production-ready and follow best practices.
 
 ## Table of Contents
 
@@ -23,71 +23,72 @@ This guide provides a comprehensive, fast reference for AI systems to quickly de
 
 ### Initialize Client
 
-```javascript
-import BosBase from 'bosbase';
+```python
+from bosbase import BosBase
 
-const pb = new BosBase('http://localhost:8090');
+pb = BosBase("http://localhost:8090")
 ```
 
 ### Password Authentication
 
-```javascript
-// Authenticate with email/username and password
-const authData = await pb.collection('users').authWithPassword(
-  'user@example.com',
-  'password123'
-);
+```python
+# Authenticate with email/username and password
+auth_data = pb.collection("users").auth_with_password(
+    "user@example.com",
+    "password123"
+)
 
-// Auth data is automatically stored
-console.log(pb.authStore.isValid);  // true
-console.log(pb.authStore.token);    // JWT token
-console.log(pb.authStore.record);   // User record
+# Auth data is automatically stored
+print(pb.auth_store.is_valid())  # True
+print(pb.auth_store.token)       # JWT token
+print(pb.auth_store.record)      # User record
 ```
 
 ### OAuth2 Authentication
 
-```javascript
-// Get OAuth2 providers
-const methods = await pb.collection('users').listAuthMethods();
-console.log(methods.oauth2.providers); // Available providers
+```python
+# Get OAuth2 providers
+methods = pb.collection("users").list_auth_methods()
+print(methods["oauth2"]["providers"])  # Available providers
 
-// Authenticate with OAuth2
-const authData = await pb.collection('users').authWithOAuth2({
-  provider: 'google',
-  urlCallback: (url) => {
-    // Open OAuth2 URL in browser
-    window.open(url);
-  },
-});
+# Authenticate with OAuth2
+def open_url(url: str):
+    # Open OAuth2 URL in browser
+    import webbrowser
+    webbrowser.open(url)
+
+auth_data = pb.collection("users").auth_with_oauth2(
+    "google",
+    url_callback=open_url,
+)
 ```
 
 ### OTP Authentication
 
-```javascript
-// Request OTP
-const otpResponse = await pb.collection('users').requestVerification('user@example.com');
+```python
+# Request OTP
+otp_response = pb.collection("users").request_verification("user@example.com")
 
-// Authenticate with OTP
-const authData = await pb.collection('users').authWithOTP(
-  otpResponse.otpId,
-  '123456' // OTP code
-);
+# Authenticate with OTP
+auth_data = pb.collection("users").auth_with_otp(
+    otp_response["otpId"],
+    "123456"  # OTP code
+)
 ```
 
 ### Check Authentication Status
 
-```javascript
-if (pb.authStore.isValid) {
-  console.log('Authenticated as:', pb.authStore.record.email);
-} else {
-  console.log('Not authenticated');
-}
+```python
+if pb.auth_store.is_valid():
+    print("Authenticated as:", pb.auth_store.record["email"])
+else:
+    print("Not authenticated")
 ```
 
 ### Logout
 
-```javascript
-pb.authStore.clear();
+```python
+pb.auth_store.clear()
 ```
 
 ---
@@ -96,58 +97,58 @@ pb.authStore.clear();
 
 ### Create Base Collection
 
-```javascript
-const collection = await pb.collections.create({
-  name: 'posts',
-  type: 'base',
-  fields: [
-    {
-      name: 'title',
-      type: 'text',
-      required: true,
-    },
-  ],
-});
+```python
+collection = pb.collections.create(body={
+    "name": "posts",
+    "type": "base",
+    "fields": [
+        {
+            "name": "title",
+            "type": "text",
+            "required": True,
+        },
+    ],
+})
 
-console.log('Collection ID:', collection.id);
+print("Collection ID:", collection["id"])
 ```
 
 ### Create Auth Collection
 
-```javascript
-const authCollection = await pb.collections.create({
-  name: 'users',
-  type: 'auth',
-  fields: [
-    {
-      name: 'name',
-      type: 'text',
-      required: false,
+```python
+auth_collection = pb.collections.create(body={
+    "name": "users",
+    "type": "auth",
+    "fields": [
+        {
+            "name": "name",
+            "type": "text",
+            "required": False,
+        },
+    ],
+    "passwordAuth": {
+        "enabled": True,
+        "identityFields": ["email", "username"],
     },
-  ],
-  passwordAuth: {
-    enabled: true,
-    identityFields: ['email', 'username'],
-  },
-});
+})
 ```
 
 ### Create View Collection
 
-```javascript
-const viewCollection = await pb.collections.create({
-  name: 'published_posts',
-  type: 'view',
-  viewQuery: 'SELECT * FROM posts WHERE published = true',
-});
+```python
+view_collection = pb.collections.create(body={
+    "name": "published_posts",
+    "type": "view",
+    "viewQuery": "SELECT * FROM posts WHERE published = true",
+})
 ```
 
 ### Get Collection by ID or Name
 
-```javascript
-const collection = await pb.collections.getOne('posts');
-// or by ID
-const collection = await pb.collections.getOne('_pbc_2287844090');
+```python
+collection = pb.collections.get_one("posts")
+# or by ID
+collection = pb.collections.get_one("_pbc_2287844090")
 ```
 
 ---
@@ -156,91 +157,91 @@ const collection = await pb.collections.getOne('_pbc_2287844090');
 
 ### Add Field to Collection
 
-```javascript
-const updatedCollection = await pb.collections.addField('posts', {
-  name: 'content',
-  type: 'editor',
-  required: false,
-});
+```python
+updated_collection = pb.collections.add_field("posts", {
+    "name": "content",
+    "type": "editor",
+    "required": False,
+})
 ```
 
 ### Common Field Types
 
-```javascript
-// Text field
+```python
+# Text field
 {
-  name: 'title',
-  type: 'text',
-  required: true,
-  min: 10,
-  max: 255,
+    "name": "title",
+    "type": "text",
+    "required": True,
+    "min": 10,
+    "max": 255,
 }
 
-// Number field
+# Number field
 {
-  name: 'views',
-  type: 'number',
-  required: false,
-  min: 0,
+    "name": "views",
+    "type": "number",
+    "required": False,
+    "min": 0,
 }
 
-// Boolean field
+# Boolean field
 {
-  name: 'published',
-  type: 'bool',
-  required: false,
+    "name": "published",
+    "type": "bool",
+    "required": False,
 }
 
-// Date field
+# Date field
 {
-  name: 'published_at',
-  type: 'date',
-  required: false,
+    "name": "published_at",
+    "type": "date",
+    "required": False,
 }
 
-// File field
+# File field
 {
-  name: 'avatar',
-  type: 'file',
-  required: false,
-  maxSelect: 1,
-  maxSize: 2097152, // 2MB
-  mimeTypes: ['image/jpeg', 'image/png'],
+    "name": "avatar",
+    "type": "file",
+    "required": False,
+    "maxSelect": 1,
+    "maxSize": 2097152,  # 2MB
+    "mimeTypes": ["image/jpeg", "image/png"],
 }
 
-// Relation field
+# Relation field
 {
-  name: 'author',
-  type: 'relation',
-  required: true,
-  collectionId: '_pbc_users_auth_',
-  maxSelect: 1,
+    "name": "author",
+    "type": "relation",
+    "required": True,
+    "collectionId": "_pbc_users_auth_",
+    "maxSelect": 1,
 }
 
-// Select field
+# Select field
 {
-  name: 'status',
-  type: 'select',
-  required: true,
-  options: {
-    values: ['draft', 'published', 'archived'],
-  },
+    "name": "status",
+    "type": "select",
+    "required": True,
+    "options": {
+        "values": ["draft", "published", "archived"],
+    },
 }
 ```
 
 ### Update Field
 
-```javascript
-const updatedCollection = await pb.collections.updateField('posts', 'title', {
-  max: 500,
-  required: true,
-});
+```python
+updated_collection = pb.collections.update_field("posts", "title", {
+    "max": 500,
+    "required": True,
+})
 ```
 
 ### Remove Field
 
-```javascript
-const updatedCollection = await pb.collections.removeField('posts', 'old_field');
+```python
+updated_collection = pb.collections.remove_field("posts", "old_field")
 ```
 
 ---
@@ -249,51 +250,43 @@ const updatedCollection = await pb.collections.removeField('posts', 'old_field')
 
 ### Create Single Record
 
-```javascript
-const record = await pb.collection('posts').create({
-  title: 'My First Post',
-  content: 'This is the content',
-  published: true,
-});
+```python
+record = pb.collection("posts").create(body={
+    "title": "My First Post",
+    "content": "This is the content",
+    "published": True,
+})
 
-console.log('Created record ID:', record.id);
+print("Created record ID:", record["id"])
 ```
 
 ### Create Record with File Upload
 
-```javascript
-const formData = new FormData();
-formData.append('title', 'Post with Image');
-formData.append('image', fileInput.files[0]); // File from input
-
-const record = await pb.collection('posts').create(formData);
+```python
+with open("image.jpg", "rb") as fh:
+    record = pb.collection("posts").create(
+        body={"title": "Post with Image"},
+        files={"image": ("image.jpg", fh, "image/jpeg")}
+    )
 ```
 
 ### Create Record with Relations
 
-```javascript
-const record = await pb.collection('posts').create({
-  title: 'My Post',
-  author: 'user_record_id', // Related record ID
-  categories: ['cat1_id', 'cat2_id'], // Multiple relations
-});
+```python
+record = pb.collection("posts").create(body={
+    "title": "My Post",
+    "author": "user_record_id",      # Related record ID
+    "categories": ["cat1_id", "cat2_id"],  # Multiple relations
+})
 ```
 
 ### Batch Create Records
 
-```javascript
-const records = await pb.batch([
-  {
-    method: 'POST',
-    url: '/api/collections/posts/records',
-    body: { title: 'Post 1' },
-  },
-  {
-    method: 'POST',
-    url: '/api/collections/posts/records',
-    body: { title: 'Post 2' },
-  },
-]);
+```python
+batch = pb.create_batch()
+batch.collection("posts").create(body={"title": "Post 1"})
+batch.collection("posts").create(body={"title": "Post 2"})
+results = batch.send()
 ```
 
 ---
@@ -302,30 +295,31 @@ const records = await pb.batch([
 
 ### Update Single Record
 
-```javascript
-const updated = await pb.collection('posts').update('record_id', {
-  title: 'Updated Title',
-  content: 'Updated content',
-});
+```python
+updated = pb.collection("posts").update("record_id", body={
+    "title": "Updated Title",
+    "content": "Updated content",
+})
 ```
 
 ### Update Record with File
 
-```javascript
-const formData = new FormData();
-formData.append('title', 'Updated Title');
-formData.append('image', newFile);
-
-const updated = await pb.collection('posts').update('record_id', formData);
+```python
+with open("new_image.jpg", "rb") as fh:
+    updated = pb.collection("posts").update(
+        "record_id",
+        body={"title": "Updated Title"},
+        files={"image": ("new_image.jpg", fh, "image/jpeg")}
+    )
 ```
 
 ### Partial Update
 
-```javascript
-// Only update specific fields
-const updated = await pb.collection('posts').update('record_id', {
-  views: 100, // Only update views
-});
+```python
+# Only update specific fields
+updated = pb.collection("posts").update("record_id", body={
+    "views": 100,  # Only update views
+})
 ```
 
 ---
@@ -334,30 +328,24 @@ const updated = await pb.collection('posts').update('record_id', {
 
 ### Delete Single Record
 
-```javascript
-await pb.collection('posts').delete('record_id');
+```python
+pb.collection("posts").delete("record_id")
 ```
 
 ### Delete Multiple Records
 
-```javascript
-// Using batch
-await pb.batch([
-  {
-    method: 'DELETE',
-    url: '/api/collections/posts/records/record_id_1',
-  },
-  {
-    method: 'DELETE',
-    url: '/api/collections/posts/records/record_id_2',
-  },
-]);
+```python
+# Using batch
+batch = pb.create_batch()
+batch.collection("posts").delete("record_id_1")
+batch.collection("posts").delete("record_id_2")
+batch.send()
 ```
 
 ### Delete All Records (Truncate)
 
-```javascript
-await pb.collections.truncate('posts');
+```python
+pb.collections.truncate("posts")
 ```
 
 ---
@@ -366,96 +354,93 @@ await pb.collections.truncate('posts');
 
 ### List Records with Pagination
 
-```javascript
-const result = await pb.collection('posts').getList(1, 50);
+```python
+result = pb.collection("posts").get_list(1, 50)
 
-console.log(result.page);        // 1
-console.log(result.perPage);     // 50
-console.log(result.totalItems);  // Total count
-console.log(result.items);       // Array of records
+print(result["page"])        # 1
+print(result["perPage"])     # 50
+print(result["totalItems"])  # Total count
+print(result["items"])       # List of records
 ```
 
 ### Filter Records
 
-```javascript
-const result = await pb.collection('posts').getList(1, 50, {
-  filter: 'published = true && views > 100',
-  sort: '-created',
-});
+```python
+result = pb.collection("posts").get_list(1, 50, query={
+    "filter": "published = true && views > 100",
+    "sort": "-created",
+})
 ```
 
 ### Filter Operators
 
-```javascript
-// Equality
-filter: 'status = "published"'
+```python
+# Equality
+filter_expr = 'status = "published"'
 
-// Comparison
-filter: 'views > 100'
-filter: 'created >= "2023-01-01"'
+# Comparison
+filter_expr = "views > 100"
+filter_expr = 'created >= "2023-01-01"'
 
-// Text search
-filter: 'title ~ "javascript"'
+# Text search
+filter_expr = 'title ~ "python"'
 
-// Multiple conditions
-filter: 'status = "published" && views > 100'
-filter: 'status = "draft" || status = "pending"'
+# Multiple conditions
+filter_expr = 'status = "published" && views > 100'
+filter_expr = 'status = "draft" || status = "pending"'
 
-// Relation filter
-filter: 'author.id = "user_id"'
+# Relation filter
+filter_expr = 'author.id = "user_id"'
 ```
 
 ### Sort Records
 
-```javascript
-// Single field
-sort: '-created'  // DESC
-sort: 'title'     // ASC
+```python
+# Single field
+sort = "-created"  # DESC
+sort = "title"     # ASC
 
-// Multiple fields
-sort: '-created,title'  // DESC by created, then ASC by title
+# Multiple fields
+sort = "-created,title"  # DESC by created, then ASC by title
 ```
 
 ### Expand Relations
 
-```javascript
-const result = await pb.collection('posts').getList(1, 50, {
-  expand: 'author,categories',
-});
+```python
+result = pb.collection("posts").get_list(1, 50, query={
+    "expand": "author,categories",
+})
 
-// Access expanded data
-result.items.forEach(post => {
-  console.log(post.expand.author.name);
-  console.log(post.expand.categories);
-});
+# Access expanded data
+for post in result["items"]:
+    print(post["expand"]["author"]["name"])
+    print(post["expand"]["categories"])
 ```
 
 ### Get Single Record
 
-```javascript
-const record = await pb.collection('posts').getOne('record_id', {
-  expand: 'author',
-});
+```python
+record = pb.collection("posts").get_one("record_id", query={
+    "expand": "author",
+})
 ```
 
 ### Get First Matching Record
 
-```javascript
-const record = await pb.collection('posts').getFirstListItem(
-  'slug = "my-post-slug"',
-  {
-    expand: 'author',
-  }
-);
+```python
+record = pb.collection("posts").get_first_list_item(
+    'slug = "my-post-slug"',
+    query={"expand": "author"}
+)
 ```
 
 ### Get All Records
 
-```javascript
-const allRecords = await pb.collection('posts').getFullList({
-  filter: 'published = true',
-  sort: '-created',
-});
+```python
+all_records = pb.collection("posts").get_full_list(query={
+    "filter": "published = true",
+    "sort": "-created",
+})
 ```
 
 ---
@@ -464,37 +449,37 @@ const allRecords = await pb.collection('posts').getFullList({
 
 ### Add Field
 
-```javascript
-const collection = await pb.collections.addField('posts', {
-  name: 'tags',
-  type: 'select',
-  options: {
-    values: ['tech', 'science', 'art'],
-  },
-});
+```python
+collection = pb.collections.add_field("posts", {
+    "name": "tags",
+    "type": "select",
+    "options": {
+        "values": ["tech", "science", "art"],
+    },
+})
 ```
 
 ### Update Field
 
-```javascript
-const collection = await pb.collections.updateField('posts', 'tags', {
-  options: {
-    values: ['tech', 'science', 'art', 'music'],
-  },
-});
+```python
+collection = pb.collections.update_field("posts", "tags", {
+    "options": {
+        "values": ["tech", "science", "art", "music"],
+    },
+})
 ```
 
 ### Remove Field
 
-```javascript
-const collection = await pb.collections.removeField('posts', 'old_field');
+```python
+collection = pb.collections.remove_field("posts", "old_field")
 ```
 
 ### Get Field Information
 
-```javascript
-const field = await pb.collections.getField('posts', 'title');
-console.log(field.type, field.required, field.options);
+```python
+field = pb.collections.get_field("posts", "title")
+print(field["type"], field["required"], field.get("options"))
 ```
 
 ---
@@ -503,42 +488,40 @@ console.log(field.type, field.required, field.options);
 
 ### Get All Fields for a Collection
 
-```javascript
-const collection = await pb.collections.getOne('posts');
-collection.fields.forEach(field => {
-  console.log(field.name, field.type, field.required);
-});
+```python
+collection = pb.collections.get_one("posts")
+for field in collection["fields"]:
+    print(field["name"], field["type"], field.get("required"))
 ```
 
 ### Get Collection Schema (Simplified)
 
-```javascript
-const schema = await pb.collections.getSchema('posts');
-console.log(schema.fields); // Array of field info
+```python
+schema = pb.collections.get_schema("posts")
+print(schema["fields"])  # List of field info
 ```
 
 ### Get All Collection Schemas
 
-```javascript
-const schemas = await pb.collections.getAllSchemas();
-schemas.collections.forEach(collection => {
-  console.log(collection.name, collection.fields);
-});
+```python
+schemas = pb.collections.get_all_schemas()
+for collection in schemas["collections"]:
+    print(collection["name"], collection["fields"])
 ```
 
 ### Query Field Information for Single Collection
 
-```javascript
-// Method 1: Get full collection
-const collection = await pb.collections.getOne('posts');
-const titleField = collection.fields.find(f => f.name === 'title');
+```python
+# Method 1: Get full collection
+collection = pb.collections.get_one("posts")
+title_field = next((f for f in collection["fields"] if f["name"] == "title"), None)
 
-// Method 2: Get specific field
-const field = await pb.collections.getField('posts', 'title');
+# Method 2: Get specific field
+field = pb.collections.get_field("posts", "title")
 
-// Method 3: Get schema
-const schema = await pb.collections.getSchema('posts');
-const titleFieldInfo = schema.fields.find(f => f.name === 'title');
+# Method 3: Get schema
+schema = pb.collections.get_schema("posts")
+title_field_info = next((f for f in schema["fields"] if f["name"] == "title"), None)
 ```
 
 ---
@@ -547,45 +530,47 @@ const titleFieldInfo = schema.fields.find(f => f.name === 'title');
 
 ### Upload File with Record Creation
 
-```javascript
-const formData = new FormData();
-formData.append('title', 'Post Title');
-formData.append('image', fileInput.files[0]);
-
-const record = await pb.collection('posts').create(formData);
+```python
+with open("image.jpg", "rb") as fh:
+    record = pb.collection("posts").create(
+        body={"title": "Post Title"},
+        files={"image": ("image.jpg", fh, "image/jpeg")}
+    )
 ```
 
 ### Upload File with Record Update
 
-```javascript
-const formData = new FormData();
-formData.append('image', newFile);
-
-const updated = await pb.collection('posts').update('record_id', formData);
+```python
+with open("new_image.jpg", "rb") as fh:
+    updated = pb.collection("posts").update(
+        "record_id",
+        files={"image": ("new_image.jpg", fh, "image/jpeg")}
+    )
 ```
 
 ### Get File URL
 
-```javascript
-const record = await pb.collection('posts').getOne('record_id');
-const fileUrl = pb.files.getURL(record, record.image);
+```python
+record = pb.collection("posts").get_one("record_id")
+file_url = pb.files.get_url(record, record["image"])
 ```
 
 ### Get File URL with Options
 
-```javascript
-const fileUrl = pb.files.getURL(record, record.image, {
-  thumb: '100x100',  // Thumbnail
-  download: true,    // Force download
-});
+```python
+file_url = pb.files.get_url(record, record["image"],
+    thumb="100x100",  # Thumbnail
+    download=True,    # Force download
+)
 ```
 
 ### Get Private File Token
 
-```javascript
-// For accessing private files
-const token = await pb.files.getToken();
-// Use token in file URL query params
+```python
+# For accessing private files
+token = pb.files.get_token()
+# Use token in file URL
+secure_url = pb.files.get_url(record, record["file"], token=token)
 ```
 
 ---
@@ -594,37 +579,34 @@ const token = await pb.files.getToken();
 
 ### List Logs
 
-```javascript
-const logs = await pb.logs.getList(1, 50);
-console.log(logs.items); // Array of log entries
+```python
+logs = pb.logs.get_list(1, 50)
+print(logs["items"])  # List of log entries
 ```
 
 ### Filter Logs
 
-```javascript
-const logs = await pb.logs.getList(1, 50, {
-  filter: 'level >= 400', // Error level and above
-  sort: '-created',
-});
+```python
+logs = pb.logs.get_list(1, 50, query={
+    "filter": "level >= 400",  # Error level and above
+    "sort": "-created",
+})
 ```
 
 ### Get Single Log
 
-```javascript
-const log = await pb.logs.getOne('log_id');
-console.log(log.message, log.data);
+```python
+log = pb.logs.get_one("log_id")
+print(log["message"], log["data"])
 ```
 
 ### Get Log Statistics
 
-```javascript
-const stats = await pb.logs.getStats({
-  filter: 'level >= 400',
-});
+```python
+stats = pb.logs.get_stats(query={"filter": "level >= 400"})
 
-stats.forEach(stat => {
-  console.log(stat.date, stat.total);
-});
+for stat in stats:
+    print(stat["date"], stat["total"])
 ```
 
 ### Log Levels
@@ -643,23 +625,23 @@ stats.forEach(stat => {
 
 ### Trigger Email Verification
 
-```javascript
-// Request verification email
-await pb.collection('users').requestVerification('user@example.com');
+```python
+# Request verification email
+pb.collection("users").request_verification("user@example.com")
 ```
 
 ### Trigger Password Reset Email
 
-```javascript
-// Request password reset email
-await pb.collection('users').requestPasswordReset('user@example.com');
+```python
+# Request password reset email
+pb.collection("users").request_password_reset("user@example.com")
 ```
 
 ### Email Change Request
 
-```javascript
-// Request email change
-await pb.collection('users').requestEmailChange('newemail@example.com');
+```python
+# Request email change
+pb.collection("users").request_email_change("newemail@example.com")
 ```
 
 ### Server-Side Email Sending
@@ -679,61 +661,56 @@ To send custom emails, you would typically:
 
 ## Complete Example: Full Application Flow
 
-```javascript
-import BosBase from 'bosbase';
+```python
+from bosbase import BosBase
 
-const pb = new BosBase('http://localhost:8090');
+pb = BosBase("http://localhost:8090")
 
-async function setupApplication() {
-  // 1. Authenticate
-  await pb.collection('users').authWithPassword('admin@example.com', 'password');
-  
-  // 2. Create collection
-  const collection = await pb.collections.create({
-    name: 'posts',
-    type: 'base',
-    fields: [
-      { name: 'title', type: 'text', required: true },
-      { name: 'content', type: 'editor' },
-      { name: 'published', type: 'bool' },
-    ],
-  });
-  
-  // 3. Add more fields
-  await pb.collections.addField('posts', {
-    name: 'views',
-    type: 'number',
-    min: 0,
-  });
-  
-  // 4. Create records
-  const post = await pb.collection('posts').create({
-    title: 'Hello World',
-    content: 'My first post',
-    published: true,
-    views: 0,
-  });
-  
-  // 5. Query records
-  const posts = await pb.collection('posts').getList(1, 10, {
-    filter: 'published = true',
-    sort: '-created',
-  });
-  
-  // 6. Update record
-  await pb.collection('posts').update(post.id, {
-    views: 100,
-  });
-  
-  // 7. Query logs
-  const logs = await pb.logs.getList(1, 20, {
-    filter: 'level >= 400',
-  });
-  
-  console.log('Application setup complete!');
-}
+def setup_application():
+    # 1. Authenticate
+    pb.collection("users").auth_with_password("admin@example.com", "password")
 
-setupApplication().catch(console.error);
+    # 2. Create collection
+    collection = pb.collections.create(body={
+        "name": "posts",
+        "type": "base",
+        "fields": [
+            {"name": "title", "type": "text", "required": True},
+            {"name": "content", "type": "editor"},
+            {"name": "published", "type": "bool"},
+        ],
+    })
+
+    # 3. Add more fields
+    pb.collections.add_field("posts", {
+        "name": "views",
+        "type": "number",
+        "min": 0,
+    })
+
+    # 4. Create records
+    post = pb.collection("posts").create(body={
+        "title": "Hello World",
+        "content": "My first post",
+        "published": True,
+        "views": 0,
+    })
+
+    # 5. Query records
+    posts = pb.collection("posts").get_list(1, 10, query={
+        "filter": "published = true",
+        "sort": "-created",
+    })
+
+    # 6. Update record
+    pb.collection("posts").update(post["id"], body={"views": 100})
+
+    # 7. Query logs
+    logs = pb.logs.get_list(1, 20, query={"filter": "level >= 400"})
+
+    print("Application setup complete!")
+
+setup_application()
 ```
 
 ---
@@ -742,26 +719,27 @@ setupApplication().catch(console.error);
 
 ### Common Patterns
 
-```javascript
-// Check if authenticated
-if (pb.authStore.isValid) { /* ... */ }
+```python
+# Check if authenticated
+if pb.auth_store.is_valid():
+    pass  # ...
 
-// Get current user
-const user = pb.authStore.record;
+# Get current user
+user = pb.auth_store.record
 
-// Refresh auth token
-await pb.collection('users').authRefresh();
+# Refresh auth token
+pb.collection("users").auth_refresh()
 
-// Error handling
-try {
-  await pb.collection('posts').create({ title: 'Test' });
-} catch (err) {
-  if (err.status === 400) {
-    console.error('Validation error:', err.data);
-  } else if (err.status === 401) {
-    console.error('Not authenticated');
-  }
-}
+# Error handling
+from bosbase.exceptions import ClientResponseError
+
+try:
+    pb.collection("posts").create(body={"title": "Test"})
+except ClientResponseError as err:
+    if err.status == 400:
+        print("Validation error:", err.response)
+    elif err.status == 401:
+        print("Not authenticated")
 ```
 
 ### Field Types Reference
@@ -782,14 +760,14 @@ try {
 
 ## Best Practices
 
-1. **Always handle errors**: Wrap API calls in try-catch
-2. **Check authentication**: Verify `pb.authStore.isValid` before operations
+1. **Always handle errors**: Wrap API calls in try-except
+2. **Check authentication**: Verify `pb.auth_store.is_valid()` before operations
 3. **Use pagination**: Don't fetch all records at once for large collections
 4. **Validate data**: Ensure required fields are provided
 5. **Use filters**: Filter data on the server, not client-side
 6. **Expand relations wisely**: Only expand what you need
-7. **Handle file uploads**: Use FormData for file fields
-8. **Refresh tokens**: Use `authRefresh()` to maintain sessions
+7. **Handle file uploads**: Use the `files` parameter for file fields
+8. **Refresh tokens**: Use `auth_refresh()` to maintain sessions
 
 ---
 
@@ -797,33 +775,39 @@ try {
 
 ### Quick Completion
 
-```javascript
-const result = await pb.langchaingo.completions({
-  model: { provider: "openai", model: "gpt-4o-mini" },
-  messages: [
-    { role: "system", content: "Answer with one concise line." },
-    { role: "user", content: "Give me a fun fact about Mars." }
-  ],
-  temperature: 0.4
-});
+```python
+from bosbase import LangChaingoCompletionRequest, LangChaingoCompletionMessage, LangChaingoModelConfig
 
-console.log(result.content);
+req = LangChaingoCompletionRequest(
+    model=LangChaingoModelConfig(provider="openai", model="gpt-4o-mini"),
+    messages=[
+        LangChaingoCompletionMessage(role="system", content="Answer with one concise line."),
+        LangChaingoCompletionMessage(role="user", content="Give me a fun fact about Mars.")
+    ],
+    temperature=0.4
+)
+
+result = pb.langchaingo.completions(req)
+print(result.content)
 ```
 
 ### Retrieval-Augmented Answering
 
-```javascript
-const rag = await pb.langchaingo.rag({
-  collection: "knowledge-base",
-  question: "Why is the sky blue?",
-  topK: 3,
-  returnSources: true
-});
+```python
+from bosbase import LangChaingoRAGRequest, LangChaingoModelConfig
 
-console.log(rag.answer);
-console.log(rag.sources);
+req = LangChaingoRAGRequest(
+    collection="knowledge-base",
+    question="Why is the sky blue?",
+    top_k=3,
+    return_sources=True
+)
+
+rag = pb.langchaingo.rag(req)
+print(rag.answer)
+print(rag.sources)
 ```
 
 ---
 
-This guide provides all essential operations for building applications with the BosBase JavaScript SDK. For more detailed information, refer to the specific API documentation files.
+This guide provides all essential operations for building applications with the BosBase Python SDK. For more detailed information, refer to the specific API documentation files.

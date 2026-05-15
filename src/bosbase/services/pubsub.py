@@ -62,6 +62,32 @@ class PubSubService(BaseService):
         with self._lock:
             return self._is_ready
 
+    def realtime_publish(
+        self,
+        topic: str,
+        data: Any,
+        *,
+        query: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, Any]:
+        """Publish a message via the HTTP REST API (not WebSocket)."""
+        payload = {"topic": topic, "data": data}
+        return self.client.send(
+            "/api/pubsub/publish",
+            method="POST",
+            body=payload,
+            query=query,
+            headers=headers,
+        )
+
+    def realtime_subscribe(
+        self,
+        topic: str,
+        callback: Callable[[PubSubMessage], None],
+    ) -> Callable[[], None]:
+        """Alias for subscribe — subscribes to a topic via WebSocket."""
+        return self.subscribe(topic, callback)
+
     def publish(self, topic: str, data: Any) -> PublishAck:
         if not topic:
             raise ValueError("topic must be set.")

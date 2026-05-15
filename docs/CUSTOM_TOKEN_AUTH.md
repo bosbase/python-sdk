@@ -1,6 +1,6 @@
 # Custom Token Binding and Login
 
-The JS SDK and BosBase service now support binding a custom token to an auth record (both `users` and `_superusers`) and signing in with that token. The server stores bindings in the `_token_bindings` table (created automatically on first bind; legacy `_tokenBindings`/`tokenBindings` are auto-renamed). Tokens are stored as hashes so raw values aren't persisted.
+The Python SDK and BosBase service now support binding a custom token to an auth record (both `users` and `_superusers`) and signing in with that token. The server stores bindings in the `_token_bindings` table (created automatically on first bind; legacy `_tokenBindings`/`tokenBindings` are auto-renamed). Tokens are stored as hashes so raw values aren't persisted.
 
 ## API endpoints
 - `POST /api/collections/{collection}/bind-token`
@@ -8,55 +8,55 @@ The JS SDK and BosBase service now support binding a custom token to an auth rec
 - `POST /api/collections/{collection}/auth-with-token`
 
 ## Binding a token
-```ts
-import Client from "@bosbase/js-sdk";
+```python
+from bosbase import BosBase
 
-const pb = new Client("http://127.0.0.1:8090");
+pb = BosBase("http://127.0.0.1:8090")
 
-// bind for a regular user
-await pb.collection("users").bindCustomToken(
+# bind for a regular user
+pb.collection("users").bind_custom_token(
     "user@example.com",
     "user-password",
     "my-app-token",
-);
+)
 
-// bind for a superuser
-await pb.collection("_superusers").bindCustomToken(
+# bind for a superuser
+pb.collection("_superusers").bind_custom_token(
     "admin@example.com",
     "admin-password",
     "admin-app-token",
-);
+)
 ```
 
 ## Unbinding a token
-```ts
-// stop accepting the token for the user
-await pb.collection("users").unbindCustomToken(
+```python
+# stop accepting the token for the user
+pb.collection("users").unbind_custom_token(
     "user@example.com",
     "user-password",
     "my-app-token",
-);
+)
 
-// stop accepting the token for a superuser
-await pb.collection("_superusers").unbindCustomToken(
+# stop accepting the token for a superuser
+pb.collection("_superusers").unbind_custom_token(
     "admin@example.com",
     "admin-password",
     "admin-app-token",
-);
+)
 ```
 
 ## Logging in with a token
-```ts
-// login with the previously bound token
-const auth = await pb.collection("users").authWithToken("my-app-token");
+```python
+# login with the previously bound token
+auth = pb.collection("users").auth_with_token("my-app-token")
 
-console.log(auth.token);  // BosBase auth token
-console.log(auth.record); // authenticated record
+print(auth["token"])   # BosBase auth token
+print(auth["record"])  # authenticated record
 
-// superuser token login
-const superAuth = await pb.collection("_superusers").authWithToken("admin-app-token");
-console.log(superAuth.token);
-console.log(superAuth.record);
+# superuser token login
+super_auth = pb.collection("_superusers").auth_with_token("admin-app-token")
+print(super_auth["token"])
+print(super_auth["record"])
 ```
 
 Notes:

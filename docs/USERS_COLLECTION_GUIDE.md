@@ -1,4 +1,4 @@
-# Built-in Users Collection Guide - JavaScript SDK
+# Built-in Users Collection Guide - Python SDK
 
 This guide explains how to use the built-in `users` collection for authentication, registration, and API rules. **The `users` collection is automatically created when BosBase is initialized and does not need to be created manually.**
 
@@ -23,31 +23,36 @@ The `users` collection is a **built-in auth collection** that is automatically c
 - **Type**: `auth` (authentication collection)
 - **Purpose**: User accounts, authentication, and authorization
 
-**Important**: 
-- ✅ **DO NOT** create a new `users` collection manually
-- ✅ **DO** use the existing built-in `users` collection
-- ✅ The collection already has proper API rules configured
-- ✅ It supports password, OAuth2, and OTP authentication
+**Important**:
+- Do NOT create a new `users` collection manually
+- DO use the existing built-in `users` collection
+- The collection already has proper API rules configured
+- It supports password, OAuth2, and OTP authentication
 
 ### Getting Users Collection Information
 
-```javascript
-// Get the users collection details
-const usersCollection = await pb.collections.getOne('users');
-// or by ID
-const usersCollection = await pb.collections.getOne('_pb_users_auth_');
+```python
+from bosbase import BosBase
 
-console.log('Collection ID:', usersCollection.id);
-console.log('Collection Name:', usersCollection.name);
-console.log('Collection Type:', usersCollection.type);
-console.log('Fields:', usersCollection.fields);
-console.log('API Rules:', {
-  listRule: usersCollection.listRule,
-  viewRule: usersCollection.viewRule,
-  createRule: usersCollection.createRule,
-  updateRule: usersCollection.updateRule,
-  deleteRule: usersCollection.deleteRule,
-});
+pb = BosBase("http://localhost:8090")
+pb.collection("_superusers").auth_with_password("admin@example.com", "password")
+
+# Get the users collection details
+users_collection = pb.collections.get_one("users")
+# or by ID
+users_collection = pb.collections.get_one("_pb_users_auth_")
+
+print("Collection ID:", users_collection["id"])
+print("Collection Name:", users_collection["name"])
+print("Collection Type:", users_collection["type"])
+print("Fields:", users_collection["fields"])
+print("API Rules:", {
+    "listRule": users_collection.get("listRule"),
+    "viewRule": users_collection.get("viewRule"),
+    "createRule": users_collection.get("createRule"),
+    "updateRule": users_collection.get("updateRule"),
+    "deleteRule": users_collection.get("deleteRule"),
+})
 ```
 
 ---
@@ -85,13 +90,13 @@ The built-in `users` collection includes these custom fields:
 
 The `users` collection comes with these default API rules:
 
-```javascript
+```python
 {
-  listRule: "id = @request.auth.id",    // Users can only list themselves
-  viewRule: "id = @request.auth.id",   // Users can only view themselves
-  createRule: "",                       // Anyone can register (public)
-  updateRule: "id = @request.auth.id", // Users can only update themselves
-  deleteRule: "id = @request.auth.id"  // Users can only delete themselves
+    "listRule": "id = @request.auth.id",    # Users can only list themselves
+    "viewRule": "id = @request.auth.id",    # Users can only view themselves
+    "createRule": "",                        # Anyone can register (public)
+    "updateRule": "id = @request.auth.id",  # Users can only update themselves
+    "deleteRule": "id = @request.auth.id"   # Users can only delete themselves
 }
 ```
 
@@ -132,78 +137,78 @@ The `users` collection comes with these default API rules:
 
 Users can register by creating a record in the `users` collection. The `createRule` is set to `""` (empty string), meaning **anyone can register**.
 
-```javascript
-import BosBase from 'bosbase';
+```python
+from bosbase import BosBase
 
-const pb = new BosBase('http://localhost:8090');
+pb = BosBase("http://localhost:8090")
 
-// Register a new user
-const newUser = await pb.collection('users').create({
-  email: 'user@example.com',
-  password: 'securepassword123',
-  passwordConfirm: 'securepassword123',
-  name: 'John Doe',
-});
+# Register a new user
+new_user = pb.collection("users").create(body={
+    "email": "user@example.com",
+    "password": "securepassword123",
+    "passwordConfirm": "securepassword123",
+    "name": "John Doe",
+})
 
-console.log('User registered:', newUser.id);
-console.log('Email:', newUser.email);
+print("User registered:", new_user["id"])
+print("Email:", new_user["email"])
 ```
 
 ### Registration with Email Verification
 
-```javascript
-// Register user (verification email sent automatically if configured)
-const newUser = await pb.collection('users').create({
-  email: 'user@example.com',
-  password: 'securepassword123',
-  passwordConfirm: 'securepassword123',
-  name: 'John Doe',
-});
+```python
+# Register user (verification email sent automatically if configured)
+new_user = pb.collection("users").create(body={
+    "email": "user@example.com",
+    "password": "securepassword123",
+    "passwordConfirm": "securepassword123",
+    "name": "John Doe",
+})
 
-// User will receive verification email
-// After clicking link, verified field becomes true
+# User will receive verification email
+# After clicking link, verified field becomes True
 ```
 
 ### Registration with Username
 
 If username authentication is enabled in the collection settings:
 
-```javascript
-const newUser = await pb.collection('users').create({
-  email: 'user@example.com',
-  username: 'johndoe',
-  password: 'securepassword123',
-  passwordConfirm: 'securepassword123',
-  name: 'John Doe',
-});
+```python
+new_user = pb.collection("users").create(body={
+    "email": "user@example.com",
+    "username": "johndoe",
+    "password": "securepassword123",
+    "passwordConfirm": "securepassword123",
+    "name": "John Doe",
+})
 ```
 
 ### Registration with Avatar Upload
 
-```javascript
-const formData = new FormData();
-formData.append('email', 'user@example.com');
-formData.append('password', 'securepassword123');
-formData.append('passwordConfirm', 'securepassword123');
-formData.append('name', 'John Doe');
-formData.append('avatar', avatarFile); // File from input
-
-const newUser = await pb.collection('users').create(formData);
+```python
+with open("avatar.jpg", "rb") as fh:
+    new_user = pb.collection("users").create(
+        body={
+            "email": "user@example.com",
+            "password": "securepassword123",
+            "passwordConfirm": "securepassword123",
+            "name": "John Doe",
+        },
+        files={"avatar": ("avatar.jpg", fh, "image/jpeg")}
+    )
 ```
 
 ### Check if Email Exists
 
-```javascript
-try {
-  const existing = await pb.collection('users').getFirstListItem(
-    'email = "user@example.com"'
-  );
-  console.log('Email already exists');
-} catch (err) {
-  if (err.status === 404) {
-    console.log('Email is available');
-  }
-}
+```python
+from bosbase.exceptions import ClientResponseError
+
+try:
+    existing = pb.collection("users").get_first_list_item('email = "user@example.com"')
+    print("Email already exists")
+except ClientResponseError as err:
+    if err.status == 404:
+        print("Email is available")
 ```
 
 ---
@@ -212,115 +217,113 @@ try {
 
 ### Password Authentication
 
-```javascript
-// Login with email and password
-const authData = await pb.collection('users').authWithPassword(
-  'user@example.com',
-  'password123'
-);
+```python
+# Login with email and password
+auth_data = pb.collection("users").auth_with_password(
+    "user@example.com",
+    "password123"
+)
 
-// Auth data is automatically stored
-console.log(pb.authStore.isValid);  // true
-console.log(pb.authStore.token);    // JWT token
-console.log(pb.authStore.record);   // User record
+# Auth data is automatically stored
+print(pb.auth_store.is_valid())  # True
+print(pb.auth_store.token)       # JWT token
+print(pb.auth_store.record)      # User record
 ```
 
 ### Login with Username
 
 If username authentication is enabled:
 
-```javascript
-const authData = await pb.collection('users').authWithPassword(
-  'johndoe',  // username instead of email
-  'password123'
-);
+```python
+auth_data = pb.collection("users").auth_with_password(
+    "johndoe",    # username instead of email
+    "password123"
+)
 ```
 
 ### OAuth2 Authentication
 
-```javascript
-// Login with OAuth2 (e.g., Google)
-const authData = await pb.collection('users').authWithOAuth2({
-  provider: 'google'
-});
+```python
+def open_browser(url: str):
+    print(f"Please visit: {url}")
 
-// If user doesn't exist, account is created automatically
-console.log(pb.authStore.record);
+# Login with OAuth2 (e.g., Google)
+auth_data = pb.collection("users").auth_with_oauth2(
+    "google",
+    url_callback=open_browser
+)
+
+# If user doesn't exist, account is created automatically
+print(pb.auth_store.record)
 ```
 
 ### OTP Authentication
 
-```javascript
-// Step 1: Request OTP
-const otpResult = await pb.collection('users').requestOTP('user@example.com');
+```python
+# Step 1: Request OTP
+otp_result = pb.collection("users").request_otp("user@example.com")
 
-// Step 2: Authenticate with OTP code from email
-const authData = await pb.collection('users').authWithOTP(
-  otpResult.otpId,
-  '123456' // OTP code from email
-);
+# Step 2: Authenticate with OTP code from email
+auth_data = pb.collection("users").auth_with_otp(
+    otp_result["otpId"],
+    "123456"  # OTP code from email
+)
 ```
 
 ### Check Current Authentication
 
-```javascript
-if (pb.authStore.isValid) {
-  const user = pb.authStore.record;
-  console.log('Logged in as:', user.email);
-  console.log('User ID:', user.id);
-  console.log('Name:', user.name);
-} else {
-  console.log('Not authenticated');
-}
+```python
+if pb.auth_store.is_valid():
+    user = pb.auth_store.record
+    print("Logged in as:", user["email"])
+    print("User ID:", user["id"])
+    print("Name:", user.get("name"))
+else:
+    print("Not authenticated")
 ```
 
 ### Refresh Auth Token
 
-```javascript
-// Refresh the authentication token
-await pb.collection('users').authRefresh();
+```python
+# Refresh the authentication token
+pb.collection("users").auth_refresh()
 ```
 
 ### Logout
 
-```javascript
-pb.authStore.clear();
+```python
+pb.auth_store.clear()
 ```
 
 ### Get Current User
 
-```javascript
-const currentUser = pb.authStore.record;
-if (currentUser) {
-  console.log('Current user:', currentUser.email);
-  console.log('User ID:', currentUser.id);
-  console.log('Name:', currentUser.name);
-  console.log('Verified:', currentUser.verified);
-}
+```python
+current_user = pb.auth_store.record
+if current_user:
+    print("Current user:", current_user["email"])
+    print("User ID:", current_user["id"])
+    print("Name:", current_user.get("name"))
+    print("Verified:", current_user.get("verified"))
 ```
 
 ### Accessing User Fields
 
-```javascript
-// After authentication, access user fields
-const user = pb.authStore.record;
+```python
+# After authentication, access user fields
+user = pb.auth_store.record
 
-// System fields
-console.log(user.id);                    // User ID
-console.log(user.email);                 // Email
-console.log(user.username);              // Username (if enabled)
-console.log(user.verified);              // Email verification status
-console.log(user.emailVisibility);       // Email visibility setting
-console.log(user.created);               // Creation date
-console.log(user.updated);               // Last update date
+# System fields
+print(user["id"])                   # User ID
+print(user["email"])                # Email
+print(user.get("username"))         # Username (if enabled)
+print(user.get("verified"))         # Email verification status
+print(user.get("emailVisibility"))  # Email visibility setting
+print(user.get("created"))          # Creation date
+print(user.get("updated"))          # Last update date
 
-// Custom fields (from users collection)
-console.log(user.name);                  // Display name
-console.log(user.avatar);                // Avatar filename
-
-// Access via data object (alternative)
-console.log(user.data.email);
-console.log(user.data.name);
+# Custom fields (from users collection)
+print(user.get("name"))    # Display name
+print(user.get("avatar"))  # Avatar filename
 ```
 
 ---
@@ -341,110 +344,110 @@ The `@request.auth` identifier provides access to the currently authenticated us
 
 #### 1. Require Authentication
 
-```javascript
-// Only authenticated users can access
-listRule: '@request.auth.id != ""'
-viewRule: '@request.auth.id != ""'
-createRule: '@request.auth.id != ""'
+```python
+# Only authenticated users can access
+list_rule = '@request.auth.id != ""'
+view_rule = '@request.auth.id != ""'
+create_rule = '@request.auth.id != ""'
 ```
 
 #### 2. Owner-Based Access
 
-```javascript
-// Users can only access their own records
-viewRule: 'author = @request.auth.id'
-updateRule: 'author = @request.auth.id'
-deleteRule: 'author = @request.auth.id'
+```python
+# Users can only access their own records
+view_rule = "author = @request.auth.id"
+update_rule = "author = @request.auth.id"
+delete_rule = "author = @request.auth.id"
 ```
 
 #### 3. Public with User-Specific Data
 
-```javascript
-// Public can see published, users can see their own
-listRule: '@request.auth.id != "" && author = @request.auth.id || status = "published"'
-viewRule: '@request.auth.id != "" && author = @request.auth.id || status = "published"'
+```python
+# Public can see published, users can see their own
+list_rule = '@request.auth.id != "" && author = @request.auth.id || status = "published"'
+view_rule = '@request.auth.id != "" && author = @request.auth.id || status = "published"'
 ```
 
 #### 4. Role-Based Access (if you add a role field)
 
-```javascript
-// Assuming you add a 'role' select field to users collection
-listRule: '@request.auth.id != "" && @request.auth.role = "admin"'
-updateRule: '@request.auth.role = "admin" || author = @request.auth.id'
+```python
+# Assuming you add a 'role' select field to users collection
+list_rule = '@request.auth.id != "" && @request.auth.role = "admin"'
+update_rule = '@request.auth.role = "admin" || author = @request.auth.id'
 ```
 
 #### 5. Verified Users Only
 
-```javascript
-// Only verified users can create
-createRule: '@request.auth.id != "" && @request.auth.verified = true'
+```python
+# Only verified users can create
+create_rule = '@request.auth.id != "" && @request.auth.verified = true'
 ```
 
 ### Setting API Rules for Other Collections
 
 When creating collections that relate to users:
 
-```javascript
-// Create posts collection with user-based rules
-const postsCollection = await pb.collections.create({
-  name: 'posts',
-  type: 'base',
-  fields: [
-    {
-      name: 'title',
-      type: 'text',
-      required: true,
-    },
-    {
-      name: 'content',
-      type: 'editor',
-    },
-    {
-      name: 'author',
-      type: 'relation',
-      collectionId: '_pb_users_auth_', // Reference to users collection
-      maxSelect: 1,
-      required: true,
-    },
-    {
-      name: 'status',
-      type: 'select',
-      options: {
-        values: ['draft', 'published'],
-      },
-    },
-  ],
-  // Public can see published posts, users can see their own
-  listRule: '@request.auth.id != "" && author = @request.auth.id || status = "published"',
-  viewRule: '@request.auth.id != "" && author = @request.auth.id || status = "published"',
-  // Only authenticated users can create
-  createRule: '@request.auth.id != ""',
-  // Only authors can update their posts
-  updateRule: 'author = @request.auth.id',
-  // Only authors can delete their posts
-  deleteRule: 'author = @request.auth.id',
-});
+```python
+# Create posts collection with user-based rules
+posts_collection = pb.collections.create(body={
+    "name": "posts",
+    "type": "base",
+    "fields": [
+        {
+            "name": "title",
+            "type": "text",
+            "required": True,
+        },
+        {
+            "name": "content",
+            "type": "editor",
+        },
+        {
+            "name": "author",
+            "type": "relation",
+            "collectionId": "_pb_users_auth_",  # Reference to users collection
+            "maxSelect": 1,
+            "required": True,
+        },
+        {
+            "name": "status",
+            "type": "select",
+            "options": {
+                "values": ["draft", "published"],
+            },
+        },
+    ],
+    # Public can see published posts, users can see their own
+    "listRule": '@request.auth.id != "" && author = @request.auth.id || status = "published"',
+    "viewRule": '@request.auth.id != "" && author = @request.auth.id || status = "published"',
+    # Only authenticated users can create
+    "createRule": '@request.auth.id != ""',
+    # Only authors can update their posts
+    "updateRule": "author = @request.auth.id",
+    # Only authors can delete their posts
+    "deleteRule": "author = @request.auth.id",
+})
 ```
 
 ### Using Filters with Users
 
-```javascript
-// Get posts by current user
-const myPosts = await pb.collection('posts').getList(1, 20, {
-  filter: 'author = @request.auth.id',
-});
+```python
+# Get posts by current user
+my_posts = pb.collection("posts").get_list(1, 20, query={
+    "filter": "author = @request.auth.id",
+})
 
-// Get posts by verified users only
-const verifiedPosts = await pb.collection('posts').getList(1, 20, {
-  filter: 'author.verified = true',
-  expand: 'author',
-});
+# Get posts by verified users only
+verified_posts = pb.collection("posts").get_list(1, 20, query={
+    "filter": "author.verified = true",
+    "expand": "author",
+})
 
-// Get posts where author name contains "John"
-const posts = await pb.collection('posts').getList(1, 20, {
-  filter: 'author.name ~ "John"',
-  expand: 'author',
-});
+# Get posts where author name contains "John"
+posts = pb.collection("posts").get_list(1, 20, query={
+    "filter": 'author.name ~ "John"',
+    "expand": "author",
+})
 ```
 
 ---
@@ -455,78 +458,76 @@ const posts = await pb.collection('posts').getList(1, 20, {
 
 When creating collections that need to reference users:
 
-```javascript
-// Create a posts collection with author relation
-const postsCollection = await pb.collections.create({
-  name: 'posts',
-  type: 'base',
-  fields: [
-    {
-      name: 'title',
-      type: 'text',
-      required: true,
-    },
-    {
-      name: 'author',
-      type: 'relation',
-      collectionId: '_pb_users_auth_', // Users collection ID
-      // OR use collection name
-      // collectionName: 'users',
-      maxSelect: 1,
-      required: true,
-    },
-  ],
-});
+```python
+# Create a posts collection with author relation
+posts_collection = pb.collections.create(body={
+    "name": "posts",
+    "type": "base",
+    "fields": [
+        {
+            "name": "title",
+            "type": "text",
+            "required": True,
+        },
+        {
+            "name": "author",
+            "type": "relation",
+            "collectionId": "_pb_users_auth_",  # Users collection ID
+            "maxSelect": 1,
+            "required": True,
+        },
+    ],
+})
 ```
 
 ### Creating Records with User Relations
 
-```javascript
-// Authenticate first
-await pb.collection('users').authWithPassword('user@example.com', 'password');
+```python
+# Authenticate first
+pb.collection("users").auth_with_password("user@example.com", "password")
 
-// Create a post with current user as author
-const post = await pb.collection('posts').create({
-  title: 'My First Post',
-  author: pb.authStore.record.id, // Current user's ID
-});
+# Create a post with current user as author
+post = pb.collection("posts").create(body={
+    "title": "My First Post",
+    "author": pb.auth_store.record["id"],  # Current user's ID
+})
 ```
 
 ### Querying with User Relations
 
-```javascript
-// Get posts with author information
-const posts = await pb.collection('posts').getList(1, 20, {
-  expand: 'author', // Expand the author relation
-});
+```python
+# Get posts with author information
+posts = pb.collection("posts").get_list(1, 20, query={
+    "expand": "author",  # Expand the author relation
+})
 
-posts.items.forEach(post => {
-  console.log('Post:', post.title);
-  console.log('Author:', post.expand.author.name);
-  console.log('Author Email:', post.expand.author.email);
-});
+for post in posts["items"]:
+    print("Post:", post["title"])
+    print("Author:", post["expand"]["author"]["name"])
+    print("Author Email:", post["expand"]["author"]["email"])
 
-// Filter posts by author
-const userPosts = await pb.collection('posts').getList(1, 20, {
-  filter: 'author = "USER_ID"',
-  expand: 'author',
-});
+# Filter posts by author
+user_posts = pb.collection("posts").get_list(1, 20, query={
+    "filter": 'author = "USER_ID"',
+    "expand": "author",
+})
 ```
 
 ### Updating User Profile
 
-```javascript
-// Users can update their own profile
-await pb.collection('users').update(pb.authStore.record.id, {
-  name: 'Updated Name',
-});
+```python
+# Users can update their own profile
+pb.collection("users").update(pb.auth_store.record["id"], body={
+    "name": "Updated Name",
+})
 
-// Update with avatar
-const formData = new FormData();
-formData.append('name', 'New Name');
-formData.append('avatar', newAvatarFile);
-
-await pb.collection('users').update(pb.authStore.record.id, formData);
+# Update with avatar
+with open("new_avatar.jpg", "rb") as fh:
+    pb.collection("users").update(
+        pb.auth_store.record["id"],
+        body={"name": "New Name"},
+        files={"avatar": ("new_avatar.jpg", fh, "image/jpeg")}
+    )
 ```
 
 ---
@@ -535,331 +536,319 @@ await pb.collection('users').update(pb.authStore.record.id, formData);
 
 ### Example 1: User Registration and Login Flow
 
-```javascript
-import BosBase from 'bosbase';
+```python
+from bosbase import BosBase
+from bosbase.exceptions import ClientResponseError
 
-const pb = new BosBase('http://localhost:8090');
+pb = BosBase("http://localhost:8090")
 
-async function registerAndLogin() {
-  try {
-    // 1. Register new user
-    const newUser = await pb.collection('users').create({
-      email: 'newuser@example.com',
-      password: 'securepassword123',
-      passwordConfirm: 'securepassword123',
-      name: 'New User',
-    });
-    
-    console.log('Registration successful:', newUser.id);
-    
-    // 2. Login with credentials
-    const authData = await pb.collection('users').authWithPassword(
-      'newuser@example.com',
-      'securepassword123'
-    );
-    
-    console.log('Login successful');
-    console.log('Token:', authData.token);
-    console.log('User:', authData.record);
-    
-    return authData;
-  } catch (err) {
-    console.error('Error:', err.message);
-    if (err.data) {
-      console.error('Validation errors:', err.data);
-    }
-  }
-}
+def register_and_login():
+    try:
+        # 1. Register new user
+        new_user = pb.collection("users").create(body={
+            "email": "newuser@example.com",
+            "password": "securepassword123",
+            "passwordConfirm": "securepassword123",
+            "name": "New User",
+        })
 
-registerAndLogin();
+        print("Registration successful:", new_user["id"])
+
+        # 2. Login with credentials
+        auth_data = pb.collection("users").auth_with_password(
+            "newuser@example.com",
+            "securepassword123"
+        )
+
+        print("Login successful")
+        print("Token:", auth_data["token"])
+        print("User:", auth_data["record"])
+
+        return auth_data
+    except ClientResponseError as err:
+        print("Error:", err.message)
+        if err.response:
+            print("Validation errors:", err.response)
+
+register_and_login()
 ```
 
 ### Example 2: Creating User-Related Collections
 
-```javascript
-import BosBase from 'bosbase';
+```python
+from bosbase import BosBase
 
-const pb = new BosBase('http://localhost:8090');
+pb = BosBase("http://localhost:8090")
 
-// Authenticate as superuser to create collections
-await pb.admins.authWithPassword('admin@example.com', 'adminpassword');
+# Authenticate as superuser to create collections
+pb.collection("_superusers").auth_with_password("admin@example.com", "adminpassword")
 
-async function setupUserRelatedCollections() {
-  // Create posts collection linked to users
-  const postsCollection = await pb.collections.create({
-    name: 'posts',
-    type: 'base',
-    fields: [
-      {
-        name: 'title',
-        type: 'text',
-        required: true,
-      },
-      {
-        name: 'content',
-        type: 'editor',
-      },
-      {
-        name: 'author',
-        type: 'relation',
-        collectionId: '_pb_users_auth_', // Link to users
-        maxSelect: 1,
-        required: true,
-      },
-      {
-        name: 'status',
-        type: 'select',
-        options: {
-          values: ['draft', 'published'],
-        },
-      },
-    ],
-    // API rules using users collection
-    listRule: '@request.auth.id != "" && author = @request.auth.id || status = "published"',
-    viewRule: '@request.auth.id != "" && author = @request.auth.id || status = "published"',
-    createRule: '@request.auth.id != ""',
-    updateRule: 'author = @request.auth.id',
-    deleteRule: 'author = @request.auth.id',
-  });
-  
-  // Create comments collection
-  const commentsCollection = await pb.collections.create({
-    name: 'comments',
-    type: 'base',
-    fields: [
-      {
-        name: 'content',
-        type: 'text',
-        required: true,
-      },
-      {
-        name: 'post',
-        type: 'relation',
-        collectionId: postsCollection.id,
-        maxSelect: 1,
-        required: true,
-      },
-      {
-        name: 'author',
-        type: 'relation',
-        collectionId: '_pb_users_auth_', // Link to users
-        maxSelect: 1,
-        required: true,
-      },
-    ],
-    listRule: '@request.auth.id != ""',
-    viewRule: '@request.auth.id != ""',
-    createRule: '@request.auth.id != ""',
-    updateRule: 'author = @request.auth.id',
-    deleteRule: 'author = @request.auth.id',
-  });
-  
-  console.log('Collections created successfully');
-}
+def setup_user_related_collections():
+    # Create posts collection linked to users
+    posts_collection = pb.collections.create(body={
+        "name": "posts",
+        "type": "base",
+        "fields": [
+            {
+                "name": "title",
+                "type": "text",
+                "required": True,
+            },
+            {
+                "name": "content",
+                "type": "editor",
+            },
+            {
+                "name": "author",
+                "type": "relation",
+                "collectionId": "_pb_users_auth_",  # Link to users
+                "maxSelect": 1,
+                "required": True,
+            },
+            {
+                "name": "status",
+                "type": "select",
+                "options": {
+                    "values": ["draft", "published"],
+                },
+            },
+        ],
+        # API rules using users collection
+        "listRule": '@request.auth.id != "" && author = @request.auth.id || status = "published"',
+        "viewRule": '@request.auth.id != "" && author = @request.auth.id || status = "published"',
+        "createRule": '@request.auth.id != ""',
+        "updateRule": "author = @request.auth.id",
+        "deleteRule": "author = @request.auth.id",
+    })
 
-setupUserRelatedCollections();
+    # Create comments collection
+    comments_collection = pb.collections.create(body={
+        "name": "comments",
+        "type": "base",
+        "fields": [
+            {
+                "name": "content",
+                "type": "text",
+                "required": True,
+            },
+            {
+                "name": "post",
+                "type": "relation",
+                "collectionId": posts_collection["id"],
+                "maxSelect": 1,
+                "required": True,
+            },
+            {
+                "name": "author",
+                "type": "relation",
+                "collectionId": "_pb_users_auth_",  # Link to users
+                "maxSelect": 1,
+                "required": True,
+            },
+        ],
+        "listRule": '@request.auth.id != ""',
+        "viewRule": '@request.auth.id != ""',
+        "createRule": '@request.auth.id != ""',
+        "updateRule": "author = @request.auth.id",
+        "deleteRule": "author = @request.auth.id",
+    })
+
+    print("Collections created successfully")
+
+setup_user_related_collections()
 ```
 
 ### Example 3: User Creates and Manages Their Posts
 
-```javascript
-import BosBase from 'bosbase';
+```python
+from bosbase import BosBase
 
-const pb = new BosBase('http://localhost:8090');
+pb = BosBase("http://localhost:8090")
 
-async function userPostManagement() {
-  // 1. User logs in
-  await pb.collection('users').authWithPassword('user@example.com', 'password');
-  const userId = pb.authStore.record.id;
-  
-  // 2. User creates a post
-  const post = await pb.collection('posts').create({
-    title: 'My First Post',
-    content: 'This is my content',
-    author: userId,
-    status: 'draft',
-  });
-  
-  console.log('Post created:', post.id);
-  
-  // 3. User lists their own posts
-  const myPosts = await pb.collection('posts').getList(1, 20, {
-    filter: `author = "${userId}"`,
-    sort: '-created',
-  });
-  
-  console.log('My posts:', myPosts.items.length);
-  
-  // 4. User updates their post
-  await pb.collection('posts').update(post.id, {
-    title: 'Updated Title',
-    status: 'published',
-  });
-  
-  // 5. User views their post with author info
-  const updatedPost = await pb.collection('posts').getOne(post.id, {
-    expand: 'author',
-  });
-  
-  console.log('Post author:', updatedPost.expand.author.name);
-  
-  // 6. User deletes their post
-  await pb.collection('posts').delete(post.id);
-  
-  console.log('Post deleted');
-}
+def user_post_management():
+    # 1. User logs in
+    pb.collection("users").auth_with_password("user@example.com", "password")
+    user_id = pb.auth_store.record["id"]
 
-userPostManagement();
+    # 2. User creates a post
+    post = pb.collection("posts").create(body={
+        "title": "My First Post",
+        "content": "This is my content",
+        "author": user_id,
+        "status": "draft",
+    })
+
+    print("Post created:", post["id"])
+
+    # 3. User lists their own posts
+    my_posts = pb.collection("posts").get_list(1, 20, query={
+        "filter": f'author = "{user_id}"',
+        "sort": "-created",
+    })
+
+    print("My posts:", len(my_posts["items"]))
+
+    # 4. User updates their post
+    pb.collection("posts").update(post["id"], body={
+        "title": "Updated Title",
+        "status": "published",
+    })
+
+    # 5. User views their post with author info
+    updated_post = pb.collection("posts").get_one(post["id"], query={"expand": "author"})
+
+    print("Post author:", updated_post["expand"]["author"]["name"])
+
+    # 6. User deletes their post
+    pb.collection("posts").delete(post["id"])
+
+    print("Post deleted")
+
+user_post_management()
 ```
 
 ### Example 4: Public Posts with User Information
 
-```javascript
-import BosBase from 'bosbase';
+```python
+from bosbase import BosBase
 
-const pb = new BosBase('http://localhost:8090');
+pb = BosBase("http://localhost:8090")
 
-async function viewPublicPosts() {
-  // No authentication required for public posts
-  
-  // Get published posts with author information
-  const posts = await pb.collection('posts').getList(1, 20, {
-    filter: 'status = "published"',
-    expand: 'author',
-    sort: '-created',
-  });
-  
-  posts.items.forEach(post => {
-    console.log('Title:', post.title);
-    console.log('Author:', post.expand.author.name);
-    // Email visibility depends on author's emailVisibility setting
-    if (post.expand.author.emailVisibility) {
-      console.log('Author Email:', post.expand.author.email);
-    }
-  });
-}
+def view_public_posts():
+    # No authentication required for public posts
 
-viewPublicPosts();
+    # Get published posts with author information
+    posts = pb.collection("posts").get_list(1, 20, query={
+        "filter": 'status = "published"',
+        "expand": "author",
+        "sort": "-created",
+    })
+
+    for post in posts["items"]:
+        print("Title:", post["title"])
+        print("Author:", post["expand"]["author"]["name"])
+        # Email visibility depends on author's emailVisibility setting
+        if post["expand"]["author"].get("emailVisibility"):
+            print("Author Email:", post["expand"]["author"]["email"])
+
+view_public_posts()
 ```
 
 ### Example 5: Email Verification Flow
 
-```javascript
-import BosBase from 'bosbase';
+```python
+from bosbase import BosBase
 
-const pb = new BosBase('http://localhost:8090');
+pb = BosBase("http://localhost:8090")
 
-async function emailVerificationFlow() {
-  // 1. User registers
-  const newUser = await pb.collection('users').create({
-    email: 'user@example.com',
-    password: 'password123',
-    passwordConfirm: 'password123',
-    name: 'User Name',
-  });
-  
-  console.log('User registered, verification email sent');
-  console.log('Verified status:', newUser.verified); // false
-  
-  // 2. User clicks verification link in email
-  // (This is handled by the backend automatically)
-  
-  // 3. Check verification status
-  const user = await pb.collection('users').getOne(newUser.id);
-  console.log('Verified:', user.verified);
-  
-  // 4. Request new verification email if needed
-  await pb.collection('users').requestVerification('user@example.com');
-}
+def email_verification_flow():
+    # 1. User registers
+    new_user = pb.collection("users").create(body={
+        "email": "user@example.com",
+        "password": "password123",
+        "passwordConfirm": "password123",
+        "name": "User Name",
+    })
 
-emailVerificationFlow();
+    print("User registered, verification email sent")
+    print("Verified status:", new_user.get("verified"))  # False
+
+    # 2. User clicks verification link in email
+    # (This is handled by the backend automatically)
+
+    # 3. Check verification status
+    user = pb.collection("users").get_one(new_user["id"])
+    print("Verified:", user.get("verified"))
+
+    # 4. Request new verification email if needed
+    pb.collection("users").request_verification("user@example.com")
+
+email_verification_flow()
 ```
 
 ### Example 6: Password Reset Flow
 
-```javascript
-import BosBase from 'bosbase';
+```python
+from bosbase import BosBase
 
-const pb = new BosBase('http://localhost:8090');
+pb = BosBase("http://localhost:8090")
 
-async function passwordResetFlow() {
-  // 1. User requests password reset
-  await pb.collection('users').requestPasswordReset('user@example.com');
-  console.log('Password reset email sent');
-  
-  // 2. User clicks link in email and gets reset token
-  // (Token is in the URL query parameter)
-  
-  // 3. User confirms password reset with token
-  await pb.collection('users').confirmPasswordReset(
-    'RESET_TOKEN_FROM_EMAIL',
-    'newpassword123',
-    'newpassword123' // passwordConfirm
-  );
-  
-  console.log('Password reset successful');
-  
-  // 4. User can now login with new password
-  await pb.collection('users').authWithPassword(
-    'user@example.com',
-    'newpassword123'
-  );
-}
+def password_reset_flow():
+    # 1. User requests password reset
+    pb.collection("users").request_password_reset("user@example.com")
+    print("Password reset email sent")
 
-passwordResetFlow();
+    # 2. User clicks link in email and gets reset token
+    # (Token is in the URL query parameter)
+
+    # 3. User confirms password reset with token
+    pb.collection("users").confirm_password_reset(
+        "RESET_TOKEN_FROM_EMAIL",
+        "newpassword123",
+        "newpassword123"  # passwordConfirm
+    )
+
+    print("Password reset successful")
+
+    # 4. User can now login with new password
+    pb.collection("users").auth_with_password(
+        "user@example.com",
+        "newpassword123"
+    )
+
+password_reset_flow()
 ```
 
 ### Example 7: Using Users in API Rules for Other Collections
 
-```javascript
-import BosBase from 'bosbase';
+```python
+from bosbase import BosBase
 
-const pb = new BosBase('http://localhost:8090');
+pb = BosBase("http://localhost:8090")
 
-// Authenticate as superuser
-await pb.admins.authWithPassword('admin@example.com', 'adminpassword');
+# Authenticate as superuser
+pb.collection("_superusers").auth_with_password("admin@example.com", "adminpassword")
 
-// Create a blog system with user-based access control
-async function createBlogSystem() {
-  // Create posts collection
-  const posts = await pb.collections.create({
-    name: 'posts',
-    type: 'base',
-    fields: [
-      { name: 'title', type: 'text', required: true },
-      { name: 'content', type: 'editor' },
-      { name: 'author', type: 'relation', collectionId: '_pb_users_auth_', maxSelect: 1, required: true },
-      { name: 'status', type: 'select', options: { values: ['draft', 'published'] } },
-    ],
-    // Public can see published, authors can see their own
-    listRule: 'status = "published" || author = @request.auth.id',
-    viewRule: 'status = "published" || author = @request.auth.id',
-    createRule: '@request.auth.id != ""',
-    updateRule: 'author = @request.auth.id',
-    deleteRule: 'author = @request.auth.id',
-  });
-  
-  // Create comments collection
-  const comments = await pb.collections.create({
-    name: 'comments',
-    type: 'base',
-    fields: [
-      { name: 'content', type: 'text', required: true },
-      { name: 'post', type: 'relation', collectionId: posts.id, maxSelect: 1, required: true },
-      { name: 'author', type: 'relation', collectionId: '_pb_users_auth_', maxSelect: 1, required: true },
-    ],
-    // Anyone can see comments on published posts, authors can see their own
-    listRule: 'post.status = "published" || author = @request.auth.id',
-    viewRule: 'post.status = "published" || author = @request.auth.id',
-    createRule: '@request.auth.id != "" && post.status = "published"',
-    updateRule: 'author = @request.auth.id',
-    deleteRule: 'author = @request.auth.id',
-  });
-  
-  console.log('Blog system created with user-based access control');
-}
+# Create a blog system with user-based access control
+def create_blog_system():
+    # Create posts collection
+    posts = pb.collections.create(body={
+        "name": "posts",
+        "type": "base",
+        "fields": [
+            {"name": "title", "type": "text", "required": True},
+            {"name": "content", "type": "editor"},
+            {"name": "author", "type": "relation", "collectionId": "_pb_users_auth_", "maxSelect": 1, "required": True},
+            {"name": "status", "type": "select", "options": {"values": ["draft", "published"]}},
+        ],
+        # Public can see published, authors can see their own
+        "listRule": 'status = "published" || author = @request.auth.id',
+        "viewRule": 'status = "published" || author = @request.auth.id',
+        "createRule": '@request.auth.id != ""',
+        "updateRule": "author = @request.auth.id",
+        "deleteRule": "author = @request.auth.id",
+    })
 
-createBlogSystem();
+    # Create comments collection
+    comments = pb.collections.create(body={
+        "name": "comments",
+        "type": "base",
+        "fields": [
+            {"name": "content", "type": "text", "required": True},
+            {"name": "post", "type": "relation", "collectionId": posts["id"], "maxSelect": 1, "required": True},
+            {"name": "author", "type": "relation", "collectionId": "_pb_users_auth_", "maxSelect": 1, "required": True},
+        ],
+        # Anyone can see comments on published posts, authors can see their own
+        "listRule": 'post.status = "published" || author = @request.auth.id',
+        "viewRule": 'post.status = "published" || author = @request.auth.id',
+        "createRule": '@request.auth.id != "" && post.status = "published"',
+        "updateRule": "author = @request.auth.id",
+        "deleteRule": "author = @request.auth.id",
+    })
+
+    print("Blog system created with user-based access control")
+
+create_blog_system()
 ```
 
 ---
@@ -881,35 +870,34 @@ createBlogSystem();
 
 ### Pattern 1: Owner-Only Access
 
-```javascript
-// Users can only access their own records
-updateRule: 'author = @request.auth.id'
-deleteRule: 'author = @request.auth.id'
+```python
+# Users can only access their own records
+update_rule = "author = @request.auth.id"
+delete_rule = "author = @request.auth.id"
 ```
 
 ### Pattern 2: Public Read, Authenticated Write
 
-```javascript
-listRule: 'status = "published" || author = @request.auth.id'
-viewRule: 'status = "published" || author = @request.auth.id'
-createRule: '@request.auth.id != ""'
+```python
+list_rule = 'status = "published" || author = @request.auth.id'
+view_rule = 'status = "published" || author = @request.auth.id'
+create_rule = '@request.auth.id != ""'
 ```
 
 ### Pattern 3: Verified Users Only
 
-```javascript
-createRule: '@request.auth.id != "" && @request.auth.verified = true'
+```python
+create_rule = '@request.auth.id != "" && @request.auth.verified = true'
 ```
 
 ### Pattern 4: Filter by Current User
 
-```javascript
-const myRecords = await pb.collection('posts').getList(1, 20, {
-  filter: `author = "${pb.authStore.record.id}"`,
-});
+```python
+my_records = pb.collection("posts").get_list(1, 20, query={
+    "filter": f'author = "{pb.auth_store.record["id"]}"',
+})
 ```
 
 ---
 
 This guide covers all essential operations with the built-in `users` collection. Remember: **always use the existing `users` collection, never create a new one manually.**
-

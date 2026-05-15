@@ -1,6 +1,6 @@
 # OAuth2 Configuration Guide
 
-This guide explains how to configure OAuth2 authentication providers for auth collections using the BosBase JavaScript SDK.
+This guide explains how to configure OAuth2 authentication providers for auth collections using the BosBase Python SDK.
 
 ## Overview
 
@@ -53,172 +53,172 @@ The following OAuth2 providers are supported:
 
 First, enable OAuth2 authentication for your auth collection:
 
-```typescript
-import { Bosbase } from 'bosbase';
+```python
+from bosbase import BosBase
 
-const pb = new Bosbase('https://your-instance.com');
+pb = BosBase("https://your-instance.com")
 
-// Authenticate as admin
-await pb.admins.authWithPassword('admin@example.com', 'password');
+# Authenticate as admin
+pb.collection("_superusers").auth_with_password("admin@example.com", "password")
 
-// Enable OAuth2 for the "users" collection
-await pb.collections.enableOAuth2('users');
+# Enable OAuth2 for the "users" collection
+pb.collections.enable_oauth2("users")
 ```
 
 ### 2. Add an OAuth2 Provider
 
 Add a provider configuration to your collection. You'll need the URLs and credentials from your OAuth2 app:
 
-```typescript
-// Add Google OAuth2 provider
-await pb.collections.addOAuth2Provider('users', {
-    name: 'google',
-    clientId: 'your-google-client-id',
-    clientSecret: 'your-google-client-secret',
-    authURL: 'https://accounts.google.com/o/oauth2/v2/auth',
-    tokenURL: 'https://oauth2.googleapis.com/token',
-    userInfoURL: 'https://www.googleapis.com/oauth2/v2/userinfo',
-    displayName: 'Google',
-    pkce: true, // Optional: enable PKCE if supported
-});
+```python
+# Add Google OAuth2 provider
+pb.collections.add_oauth2_provider("users", {
+    "name": "google",
+    "clientId": "your-google-client-id",
+    "clientSecret": "your-google-client-secret",
+    "authURL": "https://accounts.google.com/o/oauth2/v2/auth",
+    "tokenURL": "https://oauth2.googleapis.com/token",
+    "userInfoURL": "https://www.googleapis.com/oauth2/v2/userinfo",
+    "displayName": "Google",
+    "pkce": True,  # Optional: enable PKCE if supported
+})
 ```
 
 ### 3. Configure Field Mapping
 
 Map OAuth2 provider fields to your collection fields:
 
-```typescript
-await pb.collections.setOAuth2MappedFields('users', {
-    name: 'name',        // OAuth2 "name" → collection "name"
-    email: 'email',      // OAuth2 "email" → collection "email"
-    avatarUrl: 'avatar', // OAuth2 "avatarUrl" → collection "avatar"
-});
+```python
+pb.collections.set_oauth2_mapped_fields("users", {
+    "name": "name",        # OAuth2 "name" -> collection "name"
+    "email": "email",      # OAuth2 "email" -> collection "email"
+    "avatarUrl": "avatar", # OAuth2 "avatarUrl" -> collection "avatar"
+})
 ```
 
 ### 4. Get OAuth2 Configuration
 
 Retrieve the current OAuth2 configuration:
 
-```typescript
-const config = await pb.collections.getOAuth2Config('users');
-console.log(config.enabled);        // true/false
-console.log(config.providers);      // Array of providers
-console.log(config.mappedFields);   // Field mappings
+```python
+config = pb.collections.get_oauth2_config("users")
+print(config["enabled"])       # True/False
+print(config["providers"])     # List of providers
+print(config["mappedFields"])  # Field mappings
 ```
 
 ### 5. Update a Provider
 
 Update an existing provider's configuration:
 
-```typescript
-await pb.collections.updateOAuth2Provider('users', 'google', {
-    clientId: 'new-client-id',
-    clientSecret: 'new-client-secret',
-});
+```python
+pb.collections.update_oauth2_provider("users", "google", {
+    "clientId": "new-client-id",
+    "clientSecret": "new-client-secret",
+})
 ```
 
 ### 6. Remove a Provider
 
 Remove an OAuth2 provider:
 
-```typescript
-await pb.collections.removeOAuth2Provider('users', 'google');
+```python
+pb.collections.remove_oauth2_provider("users", "google")
 ```
 
 ### 7. Disable OAuth2
 
 Disable OAuth2 authentication for a collection:
 
-```typescript
-await pb.collections.disableOAuth2('users');
+```python
+pb.collections.disable_oauth2("users")
 ```
 
 ## Complete Example
 
 Here's a complete example of setting up Google OAuth2:
 
-```typescript
-import { Bosbase } from 'bosbase';
+```python
+from bosbase import BosBase
+from bosbase.exceptions import ClientResponseError
 
-const pb = new Bosbase('https://your-instance.com');
+pb = BosBase("https://your-instance.com")
 
-// Authenticate as admin
-await pb.admins.authWithPassword('admin@example.com', 'password');
+# Authenticate as admin
+pb.collection("_superusers").auth_with_password("admin@example.com", "password")
 
-try {
-    // 1. Enable OAuth2
-    await pb.collections.enableOAuth2('users');
-    
-    // 2. Add Google provider
-    await pb.collections.addOAuth2Provider('users', {
-        name: 'google',
-        clientId: 'your-google-client-id.apps.googleusercontent.com',
-        clientSecret: 'your-google-client-secret',
-        authURL: 'https://accounts.google.com/o/oauth2/v2/auth',
-        tokenURL: 'https://oauth2.googleapis.com/token',
-        userInfoURL: 'https://www.googleapis.com/oauth2/v2/userinfo',
-        displayName: 'Google',
-        pkce: true,
-    });
-    
-    // 3. Configure field mappings
-    await pb.collections.setOAuth2MappedFields('users', {
-        name: 'name',
-        email: 'email',
-        avatarUrl: 'avatar',
-    });
-    
-    console.log('OAuth2 configuration completed successfully!');
-} catch (error) {
-    console.error('Error configuring OAuth2:', error);
-}
+try:
+    # 1. Enable OAuth2
+    pb.collections.enable_oauth2("users")
+
+    # 2. Add Google provider
+    pb.collections.add_oauth2_provider("users", {
+        "name": "google",
+        "clientId": "your-google-client-id.apps.googleusercontent.com",
+        "clientSecret": "your-google-client-secret",
+        "authURL": "https://accounts.google.com/o/oauth2/v2/auth",
+        "tokenURL": "https://oauth2.googleapis.com/token",
+        "userInfoURL": "https://www.googleapis.com/oauth2/v2/userinfo",
+        "displayName": "Google",
+        "pkce": True,
+    })
+
+    # 3. Configure field mappings
+    pb.collections.set_oauth2_mapped_fields("users", {
+        "name": "name",
+        "email": "email",
+        "avatarUrl": "avatar",
+    })
+
+    print("OAuth2 configuration completed successfully!")
+except ClientResponseError as error:
+    print("Error configuring OAuth2:", error)
 ```
 
 ## Provider-Specific Examples
 
 ### GitHub
 
-```typescript
-await pb.collections.addOAuth2Provider('users', {
-    name: 'github',
-    clientId: 'your-github-client-id',
-    clientSecret: 'your-github-client-secret',
-    authURL: 'https://github.com/login/oauth/authorize',
-    tokenURL: 'https://github.com/login/oauth/access_token',
-    userInfoURL: 'https://api.github.com/user',
-    displayName: 'GitHub',
-    pkce: false,
-});
+```python
+pb.collections.add_oauth2_provider("users", {
+    "name": "github",
+    "clientId": "your-github-client-id",
+    "clientSecret": "your-github-client-secret",
+    "authURL": "https://github.com/login/oauth/authorize",
+    "tokenURL": "https://github.com/login/oauth/access_token",
+    "userInfoURL": "https://api.github.com/user",
+    "displayName": "GitHub",
+    "pkce": False,
+})
 ```
 
 ### Discord
 
-```typescript
-await pb.collections.addOAuth2Provider('users', {
-    name: 'discord',
-    clientId: 'your-discord-client-id',
-    clientSecret: 'your-discord-client-secret',
-    authURL: 'https://discord.com/api/oauth2/authorize',
-    tokenURL: 'https://discord.com/api/oauth2/token',
-    userInfoURL: 'https://discord.com/api/users/@me',
-    displayName: 'Discord',
-    pkce: true,
-});
+```python
+pb.collections.add_oauth2_provider("users", {
+    "name": "discord",
+    "clientId": "your-discord-client-id",
+    "clientSecret": "your-discord-client-secret",
+    "authURL": "https://discord.com/api/oauth2/authorize",
+    "tokenURL": "https://discord.com/api/oauth2/token",
+    "userInfoURL": "https://discord.com/api/users/@me",
+    "displayName": "Discord",
+    "pkce": True,
+})
 ```
 
 ### Microsoft
 
-```typescript
-await pb.collections.addOAuth2Provider('users', {
-    name: 'microsoft',
-    clientId: 'your-microsoft-client-id',
-    clientSecret: 'your-microsoft-client-secret',
-    authURL: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
-    tokenURL: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
-    userInfoURL: 'https://graph.microsoft.com/v1.0/me',
-    displayName: 'Microsoft',
-    pkce: true,
-});
+```python
+pb.collections.add_oauth2_provider("users", {
+    "name": "microsoft",
+    "clientId": "your-microsoft-client-id",
+    "clientSecret": "your-microsoft-client-secret",
+    "authURL": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+    "tokenURL": "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+    "userInfoURL": "https://graph.microsoft.com/v1.0/me",
+    "displayName": "Microsoft",
+    "pkce": True,
+})
 ```
 
 ## Important Notes
@@ -241,137 +241,136 @@ await pb.collections.addOAuth2Provider('users', {
 
 ## Error Handling
 
-All methods throw `ClientResponseError` if something goes wrong:
+All methods raise `ClientResponseError` if something goes wrong:
 
-```typescript
-try {
-    await pb.collections.addOAuth2Provider('users', providerConfig);
-} catch (error) {
-    if (error.status === 400) {
-        console.error('Invalid provider configuration:', error.data);
-    } else if (error.status === 403) {
-        console.error('Permission denied. Make sure you are authenticated as admin.');
-    } else {
-        console.error('Unexpected error:', error);
-    }
-}
+```python
+from bosbase.exceptions import ClientResponseError
+
+try:
+    pb.collections.add_oauth2_provider("users", provider_config)
+except ClientResponseError as error:
+    if error.status == 400:
+        print("Invalid provider configuration:", error.response)
+    elif error.status == 403:
+        print("Permission denied. Make sure you are authenticated as admin.")
+    else:
+        print("Unexpected error:", error)
 ```
 
 ## API Reference
 
-### `enableOAuth2(collectionIdOrName, options?)`
+### `enable_oauth2(collection_id_or_name, options=None)`
 
 Enables OAuth2 authentication for an auth collection.
 
 **Parameters:**
-- `collectionIdOrName` (string) - Collection id or name
-- `options` (CommonOptions, optional) - Request options
+- `collection_id_or_name` (str) - Collection id or name
+- `options` (dict, optional) - Request options
 
-**Returns:** `Promise<CollectionModel>`
+**Returns:** Collection dict
 
-**Throws:** Error if collection is not an auth collection
+**Raises:** Error if collection is not an auth collection
 
 ---
 
-### `disableOAuth2(collectionIdOrName, options?)`
+### `disable_oauth2(collection_id_or_name, options=None)`
 
 Disables OAuth2 authentication for an auth collection.
 
 **Parameters:**
-- `collectionIdOrName` (string) - Collection id or name
-- `options` (CommonOptions, optional) - Request options
+- `collection_id_or_name` (str) - Collection id or name
+- `options` (dict, optional) - Request options
 
-**Returns:** `Promise<CollectionModel>`
+**Returns:** Collection dict
 
-**Throws:** Error if collection is not an auth collection
+**Raises:** Error if collection is not an auth collection
 
 ---
 
-### `getOAuth2Config(collectionIdOrName, options?)`
+### `get_oauth2_config(collection_id_or_name, options=None)`
 
 Gets the OAuth2 configuration for an auth collection.
 
 **Parameters:**
-- `collectionIdOrName` (string) - Collection id or name
-- `options` (CommonOptions, optional) - Request options
+- `collection_id_or_name` (str) - Collection id or name
+- `options` (dict, optional) - Request options
 
-**Returns:** `Promise<{ enabled: boolean; mappedFields: { [key: string]: string }; providers: Array<any> }>`
+**Returns:** `{"enabled": bool, "mappedFields": dict, "providers": list}`
 
-**Throws:** Error if collection is not an auth collection
+**Raises:** Error if collection is not an auth collection
 
 ---
 
-### `setOAuth2MappedFields(collectionIdOrName, mappedFields, options?)`
+### `set_oauth2_mapped_fields(collection_id_or_name, mapped_fields, options=None)`
 
 Sets the OAuth2 mapped fields for an auth collection.
 
 **Parameters:**
-- `collectionIdOrName` (string) - Collection id or name
-- `mappedFields` (object) - Object mapping OAuth2 fields to collection fields
-- `options` (CommonOptions, optional) - Request options
+- `collection_id_or_name` (str) - Collection id or name
+- `mapped_fields` (dict) - Dict mapping OAuth2 fields to collection fields
+- `options` (dict, optional) - Request options
 
-**Returns:** `Promise<CollectionModel>`
+**Returns:** Collection dict
 
-**Throws:** Error if collection is not an auth collection
+**Raises:** Error if collection is not an auth collection
 
 ---
 
-### `addOAuth2Provider(collectionIdOrName, provider, options?)`
+### `add_oauth2_provider(collection_id_or_name, provider, options=None)`
 
 Adds a new OAuth2 provider to an auth collection.
 
 **Parameters:**
-- `collectionIdOrName` (string) - Collection id or name
-- `provider` (object) - OAuth2 provider configuration:
-  - `name` (string, required) - Provider name
-  - `clientId` (string, required) - OAuth2 client ID
-  - `clientSecret` (string, required) - OAuth2 client secret
-  - `authURL` (string, required) - Authorization URL
-  - `tokenURL` (string, required) - Token exchange URL
-  - `userInfoURL` (string, required) - User info API URL
-  - `displayName` (string, optional) - Display name for the provider
-  - `pkce` (boolean, optional) - Enable PKCE
-  - `extra` (object, optional) - Additional provider-specific configuration
-- `options` (CommonOptions, optional) - Request options
+- `collection_id_or_name` (str) - Collection id or name
+- `provider` (dict) - OAuth2 provider configuration:
+  - `name` (str, required) - Provider name
+  - `clientId` (str, required) - OAuth2 client ID
+  - `clientSecret` (str, required) - OAuth2 client secret
+  - `authURL` (str, required) - Authorization URL
+  - `tokenURL` (str, required) - Token exchange URL
+  - `userInfoURL` (str, required) - User info API URL
+  - `displayName` (str, optional) - Display name for the provider
+  - `pkce` (bool, optional) - Enable PKCE
+  - `extra` (dict, optional) - Additional provider-specific configuration
+- `options` (dict, optional) - Request options
 
-**Returns:** `Promise<CollectionModel>`
+**Returns:** Collection dict
 
-**Throws:** Error if collection is not an auth collection or provider is invalid
+**Raises:** Error if collection is not an auth collection or provider is invalid
 
 ---
 
-### `updateOAuth2Provider(collectionIdOrName, providerName, updates, options?)`
+### `update_oauth2_provider(collection_id_or_name, provider_name, updates, options=None)`
 
 Updates an existing OAuth2 provider in an auth collection.
 
 **Parameters:**
-- `collectionIdOrName` (string) - Collection id or name
-- `providerName` (string) - Name of the provider to update
-- `updates` (object) - Partial provider configuration to update
-- `options` (CommonOptions, optional) - Request options
+- `collection_id_or_name` (str) - Collection id or name
+- `provider_name` (str) - Name of the provider to update
+- `updates` (dict) - Partial provider configuration to update
+- `options` (dict, optional) - Request options
 
-**Returns:** `Promise<CollectionModel>`
+**Returns:** Collection dict
 
-**Throws:** Error if collection is not an auth collection or provider not found
+**Raises:** Error if collection is not an auth collection or provider not found
 
 ---
 
-### `removeOAuth2Provider(collectionIdOrName, providerName, options?)`
+### `remove_oauth2_provider(collection_id_or_name, provider_name, options=None)`
 
 Removes an OAuth2 provider from an auth collection.
 
 **Parameters:**
-- `collectionIdOrName` (string) - Collection id or name
-- `providerName` (string) - Name of the provider to remove
-- `options` (CommonOptions, optional) - Request options
+- `collection_id_or_name` (str) - Collection id or name
+- `provider_name` (str) - Name of the provider to remove
+- `options` (dict, optional) - Request options
 
-**Returns:** `Promise<CollectionModel>`
+**Returns:** Collection dict
 
-**Throws:** Error if collection is not an auth collection or provider not found
+**Raises:** Error if collection is not an auth collection or provider not found
 
 ---
 
 ## Next Steps
 
-After configuring OAuth2 providers, users can authenticate using the `authWithOAuth2()` method. See the [Authentication Guide](./AUTHENTICATION.md) for details on using OAuth2 authentication in your application.
-
+After configuring OAuth2 providers, users can authenticate using the `auth_with_oauth2()` method. See the [Authentication Guide](./AUTHENTICATION.md) for details on using OAuth2 authentication in your application.
