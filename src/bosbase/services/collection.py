@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, Mapping, MutableMapping, Optional, Sequence
+from typing import Any, Callable, Dict, List, Mapping, MutableMapping, Optional, Sequence, Union
 
 from .base import BaseCrudService
 from ..utils import encode_path_segment
+from .. import types as sdk_types
 
 
 class CollectionService(BaseCrudService):
@@ -274,6 +275,122 @@ class CollectionService(BaseCrudService):
             query=query,
             headers=headers,
         )
+
+    def create_vector(
+        self,
+        name: str,
+        *,
+        dimension: Optional[int] = None,
+        distance: Optional[str] = None,
+        options: Optional[Dict[str, Any]] = None,
+        query: Optional[Mapping[str, Any]] = None,
+        headers: Optional[MutableMapping[str, str]] = None,
+    ) -> None:
+        """Create a vector collection.
+
+        Args:
+            name: Collection name.
+            dimension: Vector dimension (e.g. 1536 for OpenAI embeddings).
+            distance: Distance metric — "cosine", "euclidean", or "dot".
+            options: Additional provider-specific options.
+            query: Extra query parameters.
+            headers: Extra request headers.
+        """
+        config = sdk_types.VectorCollectionConfig(
+            dimension=dimension,
+            distance=distance,
+            options=options,
+        )
+        self.client.vectors.create_collection(name, config, query=query, headers=headers)
+
+    # ------------------------------------------------------------------
+    # Vector record CRUD
+    # ------------------------------------------------------------------
+
+    def vector_insert(
+        self,
+        collection: str,
+        document: Union[sdk_types.VectorDocument, Mapping[str, Any]],
+        *,
+        query: Optional[Mapping[str, Any]] = None,
+        headers: Optional[MutableMapping[str, str]] = None,
+    ) -> sdk_types.VectorInsertResponse:
+        """Insert a single vector document into *collection*."""
+        return self.client.vectors.insert(document, collection=collection, query=query, headers=headers)
+
+    def vector_batch_insert(
+        self,
+        collection: str,
+        options: Union[sdk_types.VectorBatchInsertOptions, Mapping[str, Any]],
+        *,
+        query: Optional[Mapping[str, Any]] = None,
+        headers: Optional[MutableMapping[str, str]] = None,
+    ) -> sdk_types.VectorBatchInsertResponse:
+        """Insert multiple vector documents in a single batch."""
+        return self.client.vectors.batch_insert(options, collection=collection, query=query, headers=headers)
+
+    def vector_get(
+        self,
+        collection: str,
+        document_id: str,
+        *,
+        query: Optional[Mapping[str, Any]] = None,
+        headers: Optional[MutableMapping[str, str]] = None,
+    ) -> sdk_types.VectorDocument:
+        """Fetch a single vector document by its id."""
+        return self.client.vectors.get(document_id, collection=collection, query=query, headers=headers)
+
+    def vector_update(
+        self,
+        collection: str,
+        document_id: str,
+        document: Union[sdk_types.VectorDocument, Mapping[str, Any]],
+        *,
+        query: Optional[Mapping[str, Any]] = None,
+        headers: Optional[MutableMapping[str, str]] = None,
+    ) -> sdk_types.VectorInsertResponse:
+        """Update (patch) an existing vector document."""
+        return self.client.vectors.update(document_id, document, collection=collection, query=query, headers=headers)
+
+    def vector_delete(
+        self,
+        collection: str,
+        document_id: str,
+        *,
+        query: Optional[Mapping[str, Any]] = None,
+        headers: Optional[MutableMapping[str, str]] = None,
+    ) -> None:
+        """Delete a vector document."""
+        self.client.vectors.delete(document_id, collection=collection, query=query, headers=headers)
+
+    def vector_list(
+        self,
+        collection: str,
+        *,
+        page: Optional[int] = None,
+        per_page: Optional[int] = None,
+        query: Optional[Mapping[str, Any]] = None,
+        headers: Optional[MutableMapping[str, str]] = None,
+    ) -> Dict[str, Any]:
+        """List vector documents in *collection*."""
+        return self.client.vectors.list(
+            collection=collection,
+            page=page,
+            per_page=per_page,
+            query=query,
+            headers=headers,
+        )
+
+    def vector_search(
+        self,
+        collection: str,
+        options: sdk_types.VectorSearchOptions,
+        *,
+        query: Optional[Mapping[str, Any]] = None,
+        headers: Optional[MutableMapping[str, str]] = None,
+    ) -> sdk_types.VectorSearchResponse:
+        """Perform a similarity search in *collection*."""
+        return self.client.vectors.search(options, collection=collection, query=query, headers=headers)
 
     def add_index(
         self,
